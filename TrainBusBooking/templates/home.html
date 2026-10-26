@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTravel | Train &amp; Bus Ticket Booking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+            <span class="logo-badge">Express</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation" aria-expanded="false" aria-controls="mainNav">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/" class="active">🏠 Home</a>
+        <a href="javascript:void(0)" onclick="selectTransport('train'); document.querySelector('.search-card-wrapper').scrollIntoView({behavior: 'smooth'});">🚆 Trains</a>
+        <a href="javascript:void(0)" onclick="selectTransport('bus'); document.querySelector('.search-card-wrapper').scrollIntoView({behavior: 'smooth'});">🚌 Buses</a>
+        <a href="/bookings">📋 My Bookings</a>
+        <a href="#about">ℹ️ About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">
+                    Hi, {{ session.get("user_name") }}
+                </span>
+                <a href="/logout" class="login-btn" style="border-color:#cbd5e1 !important; color:#475569 !important;">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span>✨ Seamless Multi-Modal Travel Booking Across India</span>
+        </div>
+        <h1>Book Train &amp; Bus Tickets <span>With Absolute Ease</span></h1>
+        <p>
+            Experience hassle-free reservations with live seat selection, gourmet meals on track, and instant digital e-tickets.
+        </p>
+    </div>
+</section>
+
+<!-- SEARCH WIDGET -->
+<div class="search-card-wrapper">
+    <div class="search-card">
+        <form action="/search" method="GET" onsubmit="return validateSearch()">
+            
+            <!-- Mode Switcher -->
+            <div class="transport-tabs">
+                <button type="button" class="tab active" id="trainTab" onclick="selectTransport('train')">
+                    🚆 Train Tickets
+                </button>
+                <button type="button" class="tab" id="busTab" onclick="selectTransport('bus')">
+                    🚌 Bus Tickets
+                </button>
+            </div>
+
+            <input type="hidden" name="transport" id="transport" value="train">
+
+            <!-- Search Input Fields -->
+            <div class="search-fields">
+                
+                <!-- From City -->
+                <div class="field field-from">
+                    <label for="source">FROM</label>
+                    <div class="input-box">
+                        <span class="field-icon">📍</span>
+                        <input type="text" name="source" id="source" list="citySuggestions" placeholder="Enter departure city" value="Bengaluru" autocomplete="off" required>
+                    </div>
+                </div>
+
+                <!-- Swap Button -->
+                <button type="button" class="swap-btn" onclick="swapLocations()" title="Swap departure and destination" aria-label="Swap cities">
+                    ⇄
+                </button>
+
+                <!-- To City -->
+                <div class="field field-to">
+                    <label for="destination">TO</label>
+                    <div class="input-box">
+                        <span class="field-icon">🎯</span>
+                        <input type="text" name="destination" id="destination" list="citySuggestions" placeholder="Enter destination city" value="Chennai" autocomplete="off" required>
+                    </div>
+                </div>
+
+                <!-- Journey Date -->
+                <div class="field field-date">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                        <label for="journeyDate" style="margin-bottom: 0;">TRAVEL DATE</label>
+                        <div class="date-quick-helpers">
+                            <button type="button" class="quick-date-chip active" id="quickTodayBtn">Today</button>
+                            <button type="button" class="quick-date-chip" id="quickTomorrowBtn">Tomorrow</button>
+                        </div>
+                    </div>
+                    <div class="input-box">
+                        <span class="field-icon">📅</span>
+                        <input type="date" name="journey_date" id="journeyDate" required>
+                    </div>
+                </div>
+
+                <!-- Passengers -->
+                <div class="field field-passengers">
+                    <label for="passengers">PASSENGERS</label>
+                    <div class="input-box">
+                        <span class="field-icon">👤</span>
+                        <select name="passengers" id="passengers">
+                            <option value="1" selected>1 Person</option>
+                            <option value="2">2 Persons</option>
+                            <option value="3">3 Persons</option>
+                            <option value="4">4 Persons</option>
+                            <option value="5">5 Persons</option>
+                            <option value="6">6 Persons</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="search-btn" id="searchSubmitBtn">
+                    <span>Search Trains</span>
+                    <span class="arrow">→</span>
+                </button>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CITY AUTOCOMPLETE DATALIST -->
+<datalist id="citySuggestions">
+    <option value="Bengaluru">
+    <option value="Chennai">
+    <option value="Hyderabad">
+    <option value="Mumbai">
+    <option value="Pune">
+    <option value="Delhi">
+    <option value="Jaipur">
+    <option value="Coimbatore">
+    <option value="Mysuru">
+    <option value="Kolkata">
+    <option value="Kochi">
+    <option value="Goa">
+    <option value="Ahmedabad">
+    <option value="Chandigarh">
+</datalist>
+
+<!-- POPULAR ROUTES -->
+<section class="section-container">
+    <div class="section-header">
+        <h2>🔥 Popular Travel Routes</h2>
+        <p>Quick one-click bookings on top trending corridors across India</p>
+    </div>
+
+    <div class="route-grid">
+        <div class="route-card" onclick="setRoute('Bengaluru', 'Chennai', 'train')">
+            <div class="route-icon-box">🚆</div>
+            <div class="route-card-info">
+                <h3>Bengaluru → Chennai</h3>
+                <p>From ₹650 · 4h 30m · 12 Daily Trips</p>
+            </div>
+        </div>
+
+        <div class="route-card" onclick="setRoute('Bengaluru', 'Hyderabad', 'bus')">
+            <div class="route-icon-box">🚌</div>
+            <div class="route-card-info">
+                <h3>Bengaluru → Hyderabad</h3>
+                <p>From ₹850 · 8h 45m · AC Sleepers</p>
+            </div>
+        </div>
+
+        <div class="route-card" onclick="setRoute('Mumbai', 'Pune', 'train')">
+            <div class="route-icon-box">🚆</div>
+            <div class="route-card-info">
+                <h3>Mumbai → Pune</h3>
+                <p>From ₹450 · 3h 10m · Deccan Queen</p>
+            </div>
+        </div>
+
+        <div class="route-card" onclick="setRoute('Delhi', 'Jaipur', 'bus')">
+            <div class="route-icon-box">🚌</div>
+            <div class="route-card-info">
+                <h3>Delhi → Jaipur</h3>
+                <p>From ₹599 · 5h 15m · Electric AC</p>
+            </div>
+        </div>
+
+        <div class="route-card" onclick="setRoute('Bengaluru', 'Delhi', 'train')">
+            <div class="route-icon-box">🚆</div>
+            <div class="route-card-info">
+                <h3>Bengaluru → Delhi</h3>
+                <p>From ₹2,450 · Rajdhani Superfast</p>
+            </div>
+        </div>
+
+        <div class="route-card" onclick="setRoute('Chennai', 'Coimbatore', 'train')">
+            <div class="route-icon-box">🚆</div>
+            <div class="route-card-info">
+                <h3>Chennai → Coimbatore</h3>
+                <p>From ₹580 · 7h 20m · Cheran Express</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WHY CHOOSE SMARTTRAVEL -->
+<section class="section-container" style="background: white; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="section-header">
+        <h2>✨ Why Choose SmartTravel</h2>
+        <p>Engineered for speed, comfort, and transparent pricing</p>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-box">
+            <div class="feature-icon-circle">⚡</div>
+            <h3>Instant E-Tickets</h3>
+            <p>Get confirmed digital e-tickets instantly with embedded verification QR code ready for boarding.</p>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon-circle">💺</div>
+            <h3>Interactive Seat Picker</h3>
+            <p>Choose window, aisle, or sleeper berths with real-time seat status visualization.</p>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon-circle">🍱</div>
+            <h3>Meals on Wheels</h3>
+            <p>Pre-order fresh hot vegetarian thalis, chicken biryani, or tea combos delivered to your seat.</p>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon-circle">🛡️</div>
+            <h3>Safe &amp; Transparent</h3>
+            <p>Clear fare breakdown with zero hidden fees and easy one-click booking management.</p>
+        </div>
+    </div>
+</section>
+
+<!-- HOW BOOKING WORKS -->
+<section class="section-container" id="about">
+    <div class="section-header">
+        <h2>🧭 How SmartTravel Works</h2>
+        <p>Book your complete journey in four straightforward steps</p>
+    </div>
+
+    <div class="how-steps-grid">
+        <div class="how-step-card">
+            <div class="how-step-badge">STEP 1</div>
+            <div style="font-size: 36px; margin-top: 8px;">🔍</div>
+            <h3>Search Route</h3>
+            <p>Select your departure city, destination, and journey date for trains or buses.</p>
+        </div>
+
+        <div class="how-step-card">
+            <div class="how-step-badge">STEP 2</div>
+            <div style="font-size: 36px; margin-top: 8px;">💺</div>
+            <h3>Pick Your Seat</h3>
+            <p>View the interactive vehicle layout and choose your preferred seat or berth.</p>
+        </div>
+
+        <div class="how-step-card">
+            <div class="how-step-badge">STEP 3</div>
+            <div style="font-size: 36px; margin-top: 8px;">🍱</div>
+            <h3>Add Meals</h3>
+            <p>Customize your journey with fresh breakfast, lunch, dinner, or beverage add-ons.</p>
+        </div>
+
+        <div class="how-step-card">
+            <div class="how-step-badge">STEP 4</div>
+            <div style="font-size: 36px; margin-top: 8px;">🎟️</div>
+            <h3>Get E-Ticket</h3>
+            <p>Pay via UPI, Card, Net Banking, or Demo Counter and download your digital ticket.</p>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-content">
+        <div>
+            <h2>🚆 SmartTravel</h2>
+            <p>
+                SmartTravel is a modern unified train and bus ticket reservation platform. Delivering smooth, convenient, and reliable travel bookings across India.
+            </p>
+        </div>
+
+        <div>
+            <h3>Quick Links</h3>
+            <p><a href="/">Home</a></p>
+            <p><a href="/bookings">My Bookings</a></p>
+            <p><a href="/#about">About SmartTravel</a></p>
+        </div>
+
+        <div>
+            <h3>Services</h3>
+            <p><a href="javascript:void(0)" onclick="selectTransport('train'); window.scrollTo({top:0, behavior:'smooth'});">Train Booking</a></p>
+            <p><a href="javascript:void(0)" onclick="selectTransport('bus'); window.scrollTo({top:0, behavior:'smooth'});">Bus Booking</a></p>
+            <p><a href="/bookings">E-Ticket Retrieval</a></p>
+        </div>
+
+        <div>
+            <h3>Account</h3>
+            {% if session.get("user_id") %}
+                <p>Signed in as <strong>{{ session.get("user_name") }}</strong></p>
+                <p><a href="/bookings">View Booking History</a></p>
+                <p><a href="/logout">Logout</a></p>
+            {% else %}
+                <p><a href="/login">User Login</a></p>
+                <p><a href="/register">Create New Account</a></p>
+                <p><a href="/forgot-password">Forgot Password</a></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        &copy; 2026 SmartTravel Inc. All rights reserved. Designed for optimal travel experience.
+    </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai-assistant.js') }}"></script>
+
+</body>
+</html>

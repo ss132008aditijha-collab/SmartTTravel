@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Checkout | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- BOOKING PROGRESS STEPS -->
+<div class="booking-progress-bar">
+    <div class="steps-list">
+        <div class="step-item completed"><span class="step-number">✓</span><span>Select Vehicle</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Boarding Point</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Seat Layout</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Passengers</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Meals</span></div>
+        <div class="step-item active"><span class="step-number">6</span><span>Payment</span></div>
+    </div>
+</div>
+
+<main class="payment-page">
+    
+    <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 26px; font-weight: 800; margin-bottom: 6px;">💳 Review &amp; Complete Payment</h1>
+        <p style="color: var(--text-secondary); font-size: 15px;">Verify your reservation summary and choose your preferred payment method.</p>
+    </div>
+
+    <form action="/complete-booking" method="POST" id="completeBookingForm" onsubmit="submitSmartPayment(event)">
+        
+        <!-- HIDDEN RESERVATION DETAILS -->
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="hidden" name="number" value="{{ number }}">
+        <input type="hidden" name="price" value="{{ price }}">
+        <input type="hidden" name="transport" value="{{ transport }}">
+        <input type="hidden" name="source" value="{{ source }}">
+        <input type="hidden" name="destination" value="{{ destination }}">
+        <input type="hidden" name="date" value="{{ journey_date }}">
+        <input type="hidden" name="boarding" value="{{ boarding }}">
+        <input type="hidden" name="seat" value="{{ seat }}">
+        <input type="hidden" name="vehicle_class" value="{{ vehicle_class }}">
+        <input type="hidden" name="quota" value="{{ quota }}">
+
+        <input type="hidden" name="passenger_name" value="{{ passenger_name }}">
+        <input type="hidden" name="age" value="{{ age }}">
+        <input type="hidden" name="gender" value="{{ gender }}">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <input type="hidden" name="email" value="{{ email }}">
+
+        <input type="hidden" name="food_total" value="{{ food_total }}">
+        <input type="hidden" name="total" value="{{ total }}">
+
+        <!-- MAIN 2-COLUMN LAYOUT -->
+        <div class="payment-layout-grid">
+            
+            <!-- LEFT: PAYMENT METHODS -->
+            <div class="payment-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="font-size: 18px; font-weight: 800;">Choose Payment Method</h2>
+                    <span class="demo-payment-badge">Demo Mode Active</span>
+                </div>
+
+                <div class="payment-methods-stack">
+                    
+                    <!-- 1. UPI Payment -->
+                    <div class="payment-method-card active">
+                        <label class="payment-method-label">
+                            <input type="radio" name="payment_method" value="UPI" checked style="accent-color: var(--primary);">
+                            <span>📱 Instant UPI (GPay / PhonePe / Paytm / QR)</span>
+                        </label>
+
+                        <div class="payment-subform" data-method="UPI">
+                            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                                <div style="background: white; border: 1.5px solid var(--border); padding: 10px; border-radius: var(--radius-md); text-align: center;">
+                                    <div style="width: 90px; height: 90px; background: #0f172a; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 26px;">
+                                        📲
+                                    </div>
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 4px;">SCAN DEMO QR</span>
+                                </div>
+                                <div style="flex: 1; min-width: 200px;">
+                                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">ENTER UPI VPA ID</label>
+                                    <input type="text" class="form-control" placeholder="username@okhdfcbank" value="aditi@upi">
+                                    <p style="font-size: 12px; color: var(--success); margin-top: 6px;">✓ Fast instant verification simulation enabled</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Debit / Credit Card -->
+                    <div class="payment-method-card">
+                        <label class="payment-method-label">
+                            <input type="radio" name="payment_method" value="CARD" style="accent-color: var(--primary);">
+                            <span>💳 Credit / Debit Card (Visa, MasterCard, RuPay)</span>
+                        </label>
+
+                        <div class="payment-subform" data-method="CARD" style="display: none;">
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 12px; font-weight: 700;">Card Number</label>
+                                <input type="text" id="demoCardNumber" class="form-control" placeholder="4532 8901 2345 6789" value="4532 8901 2345 6789">
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 12px; font-weight: 700;">Expiry Date</label>
+                                    <input type="text" id="demoCardExpiry" class="form-control" placeholder="MM/YY" value="08/28">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 12px; font-weight: 700;">CVV</label>
+                                    <input type="password" id="demoCardCvv" class="form-control" placeholder="•••" maxlength="3" value="789">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Net Banking -->
+                    <div class="payment-method-card">
+                        <label class="payment-method-label">
+                            <input type="radio" name="payment_method" value="NETBANKING" style="accent-color: var(--primary);">
+                            <span>🏦 Net Banking</span>
+                        </label>
+
+                        <div class="payment-subform" data-method="NETBANKING" style="display: none;">
+                            <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px;">Popular Banks</label>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                                <label style="border: 1px solid var(--border); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; text-align: center; cursor: pointer;">
+                                    <input type="radio" name="bank_select" checked style="accent-color: var(--primary);"> HDFC Bank
+                                </label>
+                                <label style="border: 1px solid var(--border); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; text-align: center; cursor: pointer;">
+                                    <input type="radio" name="bank_select" style="accent-color: var(--primary);"> State Bank of India
+                                </label>
+                                <label style="border: 1px solid var(--border); padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; text-align: center; cursor: pointer;">
+                                    <input type="radio" name="bank_select" style="accent-color: var(--primary);"> ICICI Bank
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Demo Counter / Cash -->
+                    <div class="payment-method-card">
+                        <label class="payment-method-label">
+                            <input type="radio" name="payment_method" value="DEMO_COUNTER" style="accent-color: var(--primary);">
+                            <span>💵 Pay at Counter / Viva Demo</span>
+                        </label>
+
+                        <div class="payment-subform" data-method="DEMO_COUNTER" style="display: none;">
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+                                ℹ️ This option confirms your ticket booking directly into the SQLite database without charging any live financial account. Perfect for college viva and project demonstrations.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; margin-top: 14px;">
+                    <span style="font-size: 18px;">🔒</span>
+                    <span>256-Bit SSL End-to-End Encryption · PCI-DSS Compliant Demo Checkout</span>
+                </div>
+            </div>
+
+            <!-- RIGHT: ORDER SUMMARY ACCORDION & PAY BUTTON -->
+            <aside class="seat-sidebar-summary" style="top: 90px;">
+                <h3>Fare Breakdown</h3>
+
+                <div style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 14px; font-weight: 800; margin-bottom: 2px;">{{ name }}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">
+                        {{ transport|capitalize }} · #{{ number }}
+                    </div>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                        Class: {{ vehicle_class }}
+                    </div>
+                    
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">
+                        <strong>{{ source }} ➔ {{ destination }}</strong>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        📅 {{ journey_date }} | 💺 Seat: <strong>{{ seat }}</strong>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        👤 {{ passenger_name }} ({{ age }}, {{ gender }})
+                    </div>
+                </div>
+
+                <!-- Price Details Table -->
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span style="color: var(--text-secondary);">Ticket Fare ({{ vehicle_class }})</span>
+                        <strong>₹{{ "%.2f"|format(price|float) }}</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span style="color: var(--text-secondary);">Pre-Ordered Meals</span>
+                        <strong>₹{{ "%.2f"|format(food_total|float) }}</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span style="color: var(--text-secondary);">Convenience &amp; GST</span>
+                        <strong style="color: var(--success);">FREE (₹0.00)</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; padding-top: 12px; border-top: 2px dashed var(--border); color: var(--primary);">
+                        <span>Total Payable</span>
+                        <span>₹{{ "%.2f"|format(total|float) }}</span>
+                    </div>
+                </div>
+
+                <!-- SUBMIT BUTTON -->
+                <button type="submit" class="continue-btn" id="payNowBtn" style="padding: 16px;">
+                    <span>Confirm &amp; Pay ₹{{ "%.2f"|format(total|float) }}</span>
+                    <span>➔</span>
+                </button>
+            </aside>
+
+        </div>
+
+    </form>
+
+</main>
+
+<!-- PROCESSING OVERLAY MODAL -->
+<div class="payment-processing-overlay" id="paymentProcessingOverlay">
+    <div class="processing-card">
+        <div class="spinner"></div>
+        <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">Processing Reservation...</h3>
+        <p style="color: var(--text-secondary); font-size: 14px;">
+            Verifying payment and securing Seat <strong>{{ seat }}</strong> on {{ name }} ({{ vehicle_class }})...
+        </p>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+
+</body>
+</html>

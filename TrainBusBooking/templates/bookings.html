@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings" class="active">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<main class="bookings-dashboard">
+    
+    <!-- DASHBOARD HEADER -->
+    <div class="bookings-header-banner">
+        <div>
+            <h1 style="font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;">My Bookings</h1>
+            <p style="color: var(--text-secondary); font-size: 15px;">
+                View your confirmed e-tickets, upcoming journeys, and trip history.
+            </p>
+        </div>
+
+        <a href="/" class="continue-btn" style="width: auto; padding: 10px 20px;">
+            <span>+ Book New Journey</span>
+        </a>
+    </div>
+
+    <!-- NOTIFICATION FLASH (if any) -->
+    {% if request.args.get('message') %}
+        <div class="alert-banner alert-success">
+            <span>✓</span>
+            <div>{{ request.args.get('message') }}</div>
+        </div>
+    {% endif %}
+
+    <!-- STATUS FILTER TABS -->
+    <div class="booking-status-tabs">
+        <button type="button" class="booking-tab-btn active" data-filter="all">All Bookings ({{ bookings|length }})</button>
+        <button type="button" class="booking-tab-btn" data-filter="upcoming">Upcoming</button>
+        <button type="button" class="booking-tab-btn" data-filter="completed">Completed</button>
+        <button type="button" class="booking-tab-btn" data-filter="cancelled">Cancelled</button>
+    </div>
+
+    <!-- BOOKINGS LIST -->
+    <div id="bookingsListContainer">
+        {% if bookings and bookings|length > 0 %}
+            {% for b in bookings %}
+                <div class="history-booking-card"
+                     data-status="{{ b['status'] | lower }}"
+                     data-date="{{ b['journey_date'] }}">
+                    
+                    <div class="booking-card-top">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 26px;">
+                                {% if b['transport'] == 'bus' %}🚌{% else %}🚆{% endif %}
+                            </span>
+                            <div>
+                                <h2 style="font-size: 18px; font-weight: 800;">{{ b['vehicle_name'] }}</h2>
+                                <span style="font-size: 13px; color: var(--text-muted);">
+                                    {{ b['transport'] | capitalize }} · #{{ b['vehicle_number'] }}{% if b['vehicle_class'] %} · <strong style="color:var(--primary);">{{ b['vehicle_class'] }}</strong>{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <span class="status-badge {% if b['status'] == 'CONFIRMED' %}confirmed{% else %}cancelled{% endif %}">
+                                {{ b['status'] }}
+                            </span>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                                PNR: <strong>{{ b['booking_id'] }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Journey Row -->
+                    <div style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <strong style="font-size: 16px;">{{ b['source'] }}</strong>
+                            <span style="color: var(--primary); font-weight: 800;">➔</span>
+                            <strong style="font-size: 16px;">{{ b['destination'] }}</strong>
+                        </div>
+
+                        <div style="font-size: 13px; color: var(--text-secondary);">
+                            📅 <strong>{{ b['journey_date'] }}</strong> | 📍 {{ b['boarding'] }}
+                        </div>
+                    </div>
+
+                    <!-- Passenger and Fare Strip -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; padding-top: 6px;">
+                        <div style="font-size: 13px; color: var(--text-secondary);">
+                            <span>Passenger: <strong>{{ b['passenger_name'] }}</strong></span>
+                            <span style="margin: 0 8px;">·</span>
+                            <span>Seat: <strong style="color: var(--primary);">{{ b['seat'] }}</strong></span>
+                            <span style="margin: 0 8px;">·</span>
+                            <span>Total Paid: <strong style="color: var(--text-primary); font-size: 15px;">₹{{ b['total'] }}</strong></span>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <a href="/ticket?booking_id={{ b['booking_id'] }}"
+                               class="select-btn"
+                               style="padding: 8px 16px; font-size: 13px;">
+                                🎟️ View E-Ticket
+                            </a>
+
+                            {% if b['status'] == 'CONFIRMED' %}
+                                <button type="button"
+                                        onclick="openCancelModal('{{ b['booking_id'] }}')"
+                                        style="background: white; border: 1.5px solid var(--border); color: var(--danger); font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: var(--radius-md); cursor: pointer; transition: var(--transition);">
+                                    Cancel Booking
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </div>
+            {% endfor %}
+
+            <!-- Empty filtered notice (hidden by default) -->
+            <div id="emptyFilteredBookingsNotice" style="display: none; background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 50px 20px; text-align: center;">
+                <div style="font-size: 40px; margin-bottom: 12px;">🔍</div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">No Bookings Found Under This Tab</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">Try clicking "All Bookings" to see your full travel history.</p>
+            </div>
+
+        {% else %}
+            <!-- ZERO BOOKINGS EMPTY STATE -->
+            <div style="background: white; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 60px 20px; text-align: center; box-shadow: var(--shadow-sm);">
+                <div style="font-size: 54px; margin-bottom: 16px;">🚆</div>
+                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">No Bookings Found</h2>
+                <p style="color: var(--text-secondary); font-size: 15px; max-width: 440px; margin: 0 auto 24px;">
+                    You have not booked any train or bus tickets yet. Search for your route now and secure your seats in seconds!
+                </p>
+                <a href="/" class="continue-btn" style="display: inline-flex; width: auto; padding: 14px 28px;">
+                    <span>Book Your First Journey</span>
+                    <span>➔</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</main>
+
+<!-- CANCEL BOOKING CONFIRMATION MODAL -->
+<div class="payment-processing-overlay" id="cancelBookingModal">
+    <div class="processing-card" style="text-align: left; max-width: 440px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--danger-subtle); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                ⚠️
+            </div>
+            <div>
+                <h3 style="font-size: 18px; font-weight: 800; margin: 0;">Cancel Reservation</h3>
+                <span style="font-size: 12px; color: var(--text-muted);">PNR: <strong id="modalBookingIdTarget">ST000000</strong></span>
+            </div>
+        </div>
+
+        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+            Are you sure you want to cancel this booking? The seat will be released back to other travellers and status will be updated to <strong>CANCELLED</strong>.
+        </p>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="close-cancel-modal" style="background: var(--surface-muted); border: 1px solid var(--border); padding: 10px 18px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">
+                Keep Booking
+            </button>
+            <button type="button" id="confirmCancelActionBtn" style="background: var(--danger); color: white; border: none; padding: 10px 18px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer;">
+                Yes, Cancel Booking
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bookings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai-assistant.js') }}"></script>
+
+</body>
+</html>

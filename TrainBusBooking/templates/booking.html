@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if transport == 'train' %}Train Reservation{% else %}Bus Reservation{% endif %} Overview | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- BOOKING PROGRESS STEPS -->
+<div class="booking-progress-bar">
+    <div class="steps-list">
+        <div class="step-item completed">
+            <span class="step-number">✓</span>
+            <span>Select Vehicle</span>
+        </div>
+        <div class="step-item active">
+            <span class="step-number">2</span>
+            <span>Boarding &amp; Class</span>
+        </div>
+        <div class="step-item">
+            <span class="step-number">3</span>
+            <span>Seat / Berth</span>
+        </div>
+        <div class="step-item">
+            <span class="step-number">4</span>
+            <span>Passengers</span>
+        </div>
+        <div class="step-item">
+            <span class="step-number">5</span>
+            <span>Meals</span>
+        </div>
+        <div class="step-item">
+            <span class="step-number">6</span>
+            <span>Payment</span>
+        </div>
+    </div>
+</div>
+
+<main class="booking-page">
+    <div class="booking-container">
+
+        <!-- JOURNEY OVERVIEW CARD -->
+        <div class="journey-overview-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+                <div>
+                    <span class="vehicle-type-badge" style="background: {% if transport == 'train' %}#1e3a8a{% else %}#0284c7{% endif %}; color: white;">
+                        {% if transport == 'bus' %}🚌 Intercity Bus Booking{% else %}🚆 Indian Railways (IRCTC Approved){% endif %}
+                    </span>
+                    <h1 style="font-size: 24px; font-weight: 800; margin: 8px 0 4px;">{{ name }}</h1>
+                    <p style="color: var(--text-muted); font-size: 14px;">
+                        {% if transport == 'train' %}Train Number: <strong>#{{ number }}</strong> | Quota: <strong>{{ quota }}</strong>{% else %}Registration: <strong>{{ number }}</strong>{% endif %}
+                    </p>
+                </div>
+
+                <div style="text-align: right;">
+                    <span style="font-size: 13px; color: var(--text-muted);">Selected Class Fare</span>
+                    <div style="font-size: 28px; font-weight: 800; color: var(--primary);">₹<span id="displayClassPrice">{{ price }}</span></div>
+                    <small style="font-size: 11px; color: var(--text-muted);">Per Passenger (Excl. meals)</small>
+                </div>
+            </div>
+
+            <div style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div>
+                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">DEPARTURE</span>
+                        <div style="font-size: 18px; font-weight: 800;">{{ source }}</div>
+                    </div>
+                    <span style="font-size: 20px; color: var(--primary); font-weight: 800;">➔</span>
+                    <div>
+                        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">ARRIVAL</span>
+                        <div style="font-size: 18px; font-weight: 800;">{{ destination }}</div>
+                    </div>
+                </div>
+
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">TRAVEL DATE</span>
+                    <div style="font-size: 16px; font-weight: 700; color: var(--text-primary);">📅 {{ journey_date }}</div>
+                </div>
+
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">TRAVEL CLASS</span>
+                    <div style="font-size: 16px; font-weight: 800; color: var(--primary);" id="selectedClassLabel">{{ vehicle_class }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if transport == 'train' %}
+            <!-- TRAIN SPECIFIC: CLASS SWITCHER & AMENITIES -->
+            <div class="boarding-select-card">
+                <h2>Select / Confirm Train Class &amp; Quota</h2>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                    Choose your desired Indian Railways coach category. Each tier offers different comfort, berth sizes, and AC amenities.
+                </p>
+
+                <div class="train-classes-grid" style="margin-bottom: 20px;">
+                    <label class="train-class-box class-ac {% if '1A' in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('1A (AC First Class)', '2450', '1')">
+                        <input type="radio" name="trainClassRadio" value="1A" {% if '1A' in vehicle_class %}checked{% endif %} style="display: none;">
+                        <div class="class-box-header">
+                            <strong>1A</strong>
+                            <span class="class-ac-badge badge-ac">AC</span>
+                        </div>
+                        <div class="class-box-name">AC First Class</div>
+                        <div class="class-box-price">₹2,450</div>
+                        <div class="class-box-status" style="font-size: 11px;">Lockable coupe &amp; luxury linen</div>
+                    </label>
+
+                    <label class="train-class-box class-ac {% if '2A' in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('2A (AC 2 Tier)', '1580', '1')">
+                        <input type="radio" name="trainClassRadio" value="2A" {% if '2A' in vehicle_class %}checked{% endif %} style="display: none;">
+                        <div class="class-box-header">
+                            <strong>2A</strong>
+                            <span class="class-ac-badge badge-ac">AC</span>
+                        </div>
+                        <div class="class-box-name">AC 2 Tier</div>
+                        <div class="class-box-price">₹1,580</div>
+                        <div class="class-box-status" style="font-size: 11px;">2-tier berths with privacy curtains</div>
+                    </label>
+
+                    <label class="train-class-box class-ac {% if '3A' in vehicle_class or vehicle_class == 'STANDARD' %}active-class-pill{% endif %}" onclick="selectTrainClass('3A (AC 3 Tier)', '1120', '1')">
+                        <input type="radio" name="trainClassRadio" value="3A" {% if '3A' in vehicle_class or vehicle_class == 'STANDARD' %}checked{% endif %} style="display: none;">
+                        <div class="class-box-header">
+                            <strong>3A</strong>
+                            <span class="class-ac-badge badge-ac">AC</span>
+                        </div>
+                        <div class="class-box-name">AC 3 Tier</div>
+                        <div class="class-box-price">₹1,120</div>
+                        <div class="class-box-status" style="font-size: 11px;">3-tier berths, AC &amp; bedrolls</div>
+                    </label>
+
+                    <label class="train-class-box class-nonac {% if 'SL' in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('SL (Sleeper Class)', '460', '0')">
+                        <input type="radio" name="trainClassRadio" value="SL" {% if 'SL' in vehicle_class %}checked{% endif %} style="display: none;">
+                        <div class="class-box-header">
+                            <strong>SL</strong>
+                            <span class="class-ac-badge badge-nonac">NON-AC</span>
+                        </div>
+                        <div class="class-box-name">Sleeper Class</div>
+                        <div class="class-box-price">₹460</div>
+                        <div class="class-box-status" style="font-size: 11px;">Open window budget sleeper</div>
+                    </label>
+                </div>
+            </div>
+        {% else %}
+            <!-- BUS SPECIFIC: TYPE & AMENITIES OVERVIEW -->
+            <div class="boarding-select-card">
+                <h2>Bus Specifications &amp; Climate Control</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 14px;">
+                    <div style="background: var(--surface-subtle); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 14px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">AIR CONDITIONING</span>
+                        <div style="font-size: 16px; font-weight: 800; color: {% if is_ac == '1' %}var(--primary){% else %}var(--text-secondary){% endif %}; margin-top: 2px;">
+                            {% if is_ac == '1' %}❄️ Climate Controlled AC{% else %}💨 Non-AC (Natural Ventilation){% endif %}
+                        </div>
+                    </div>
+
+                    <div style="background: var(--surface-subtle); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 14px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">BERTH / SEATING TYPE</span>
+                        <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                            {% if 'sleeper' in vehicle_class|lower %}🛏️ Sleeper Berths (Lower &amp; Upper){% else %}💺 Pushback Reclining Seats{% endif %}
+                        </div>
+                    </div>
+
+                    <div style="background: var(--surface-subtle); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 14px;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">LIVE TRACKING</span>
+                        <div style="font-size: 16px; font-weight: 800; color: var(--success); margin-top: 2px;">
+                            📍 Enabled (GPS Tracking Link via SMS)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- SELECT BOARDING POINT CARD -->
+        <div class="boarding-select-card">
+            <h2>
+                {% if transport == 'train' %}Select Railway Boarding Station{% else %}Select Bus Pick-Up Point{% endif %}
+            </h2>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                {% if transport == 'train' %}
+                    Choose the station where you will board the train in {{ source }}. Chart is prepared 4 hours prior.
+                {% else %}
+                    Choose the pick-up location in {{ source }}. Bus will arrive at scheduled pick-up point.
+                {% endif %}
+            </p>
+
+            <div class="station-list">
+                {% if transport == 'train' %}
+                    <label class="station-option">
+                        <input type="radio" name="boarding" value="{{ source }} City Junction (SBC) - Platform 1" checked style="accent-color: var(--primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 16px;">🚉 {{ source }} City Junction (SBC)</strong>
+                                <span class="route-meta-pill" style="background: var(--primary-subtle); color: var(--primary);">Main Concourse</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                                Platform 1 · Main station with executive waiting lounge &amp; IRCTC food court
+                            </p>
+                        </div>
+                    </label>
+
+                    <label class="station-option">
+                        <input type="radio" name="boarding" value="{{ source }} Yesvantpur Junction (YPR) - Platform 4" style="accent-color: var(--primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 16px;">🚉 Yesvantpur Junction (YPR)</strong>
+                                <span class="route-meta-pill">+18 Mins</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                                Platform 4 · North gate entry with quick cab parking
+                            </p>
+                        </div>
+                    </label>
+
+                    <label class="station-option">
+                        <input type="radio" name="boarding" value="{{ source }} Cantonment (BNC) - Platform 2" style="accent-color: var(--primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 16px;">🚉 {{ source }} Cantonment (BNC)</strong>
+                                <span class="route-meta-pill">+35 Mins</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                                Platform 2 · Historic station with direct road connectivity
+                            </p>
+                        </div>
+                    </label>
+                {% else %}
+                    <label class="station-option">
+                        <input type="radio" name="boarding" value="Kempegowda Bus Station (Majestic Platform 8)" checked style="accent-color: var(--primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 16px;">🚏 Kempegowda Bus Station (Majestic Platform 8)</strong>
+                                <span class="route-meta-pill" style="background: var(--primary-subtle); color: var(--primary);">Main Hub</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                                Central terminal departure · AC passenger lounge available
+                            </p>
+                        </div>
+                    </label>
+
+                    <label class="station-option">
+                        <input type="radio" name="boarding" value="Madiwala (Opposite Total Mall / Indian Oil)" style="accent-color: var(--primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 16px;">🚏 Madiwala Pick-Up Point</strong>
+                                <span class="route-meta-pill">+40 Mins</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                                Near Total Mall / Indian Oil Petrol Pump on Hosur Main Road
+                            </p>
+                        </div>
+                    </label>
+
+                    <label class="station-option">
+                        <input type="radio" name="boarding" value="Electronic City Toll Gate (Elevated Highway Exit)" style="accent-color: var(--primary); width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 16px;">🚏 Electronic City Toll Plaza</strong>
+                                <span class="route-meta-pill">+1 Hour</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                                Highway junction designated bus boarding shelter
+                            </p>
+                        </div>
+                    </label>
+                {% endif %}
+            </div>
+
+            <!-- CONTINUE BUTTON -->
+            <button type="button" class="continue-btn" onclick="continueToSeatSelection()">
+                <span>Continue to Seat / Berth Selection</span>
+                <span>➔</span>
+            </button>
+        </div>
+
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+let currentClass = "{{ vehicle_class }}";
+let currentPrice = "{{ price }}";
+let currentIsAc = "{{ is_ac }}";
+
+function selectTrainClass(className, classPrice, isAc) {
+    currentClass = className;
+    currentPrice = classPrice;
+    currentIsAc = isAc;
+
+    document.getElementById("displayClassPrice").textContent = classPrice;
+    document.getElementById("selectedClassLabel").textContent = className;
+
+    document.querySelectorAll(".train-class-box").forEach(box => box.classList.remove("active-class-pill"));
+    event.currentTarget.classList.add("active-class-pill");
+}
+
+function continueToSeatSelection() {
+    const selectedRadio = document.querySelector('input[name="boarding"]:checked');
+    const boardingPoint = selectedRadio ? selectedRadio.value : "{{ source }} Station";
+
+    const params = new URLSearchParams(window.location.search);
+    params.set("boarding", boardingPoint);
+    params.set("class", currentClass);
+    params.set("price", currentPrice);
+    params.set("is_ac", currentIsAc);
+
+    window.location.href = `/seat-selection?${params.toString()}`;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal Sign In | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel <span style="font-size: 11px; background: #1e3a8a; color: white; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">ADMIN</span></span>
+        </a>
+    </div>
+
+    <div class="nav-links">
+        <a href="/">Return to Public Booking</a>
+    </div>
+</nav>
+
+<main class="auth-page">
+    <div class="auth-card">
+        
+        <div class="auth-header">
+            <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+            <h1>Admin Portal Login</h1>
+            <p>Access the SmartTravel operations and schedule management console.</p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert-danger" style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: var(--radius-md); margin-bottom: 18px; font-size: 13px;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/admin/login" method="POST">
+            <div class="form-group">
+                <label for="adminEmail">Admin Email Address</label>
+                <input
+                    type="email"
+                    id="adminEmail"
+                    name="email"
+                    class="form-control"
+                    placeholder="admin@smarttravel.com"
+                    value="admin@smarttravel.com"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label for="adminPassword">Admin Security Password</label>
+                <input
+                    type="password"
+                    id="adminPassword"
+                    name="password"
+                    class="form-control"
+                    placeholder="Enter admin password"
+                    value="admin123"
+                    required>
+            </div>
+
+            <button type="submit" class="auth-submit-btn">
+                <span>Sign In to Operations Console</span>
+                <span>➔</span>
+            </button>
+        </form>
+
+        <div style="background: var(--surface-muted); padding: 12px; border-radius: var(--radius-md); margin-top: 20px; font-size: 12px; color: var(--text-secondary); text-align: center;">
+            Demo credentials pre-filled: <strong>admin@smarttravel.com / admin123</strong>
+        </div>
+
+    </div>
+</main>
+
+</body>
+</html>

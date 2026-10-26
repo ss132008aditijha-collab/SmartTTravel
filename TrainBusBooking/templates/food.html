@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Meals &amp; Snacks | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- BOOKING PROGRESS STEPS -->
+<div class="booking-progress-bar">
+    <div class="steps-list">
+        <div class="step-item completed"><span class="step-number">✓</span><span>Select Vehicle</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Boarding Point</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Seat Layout</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Passengers</span></div>
+        <div class="step-item active"><span class="step-number">5</span><span>Meals</span></div>
+        <div class="step-item"><span class="step-number">6</span><span>Payment</span></div>
+    </div>
+</div>
+
+<main class="food-page">
+    
+    <!-- Top Summary Banner -->
+    <div class="journey-overview-card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <span class="vehicle-type-badge">
+                    {% if transport == 'bus' %}🚌 Bus Journey{% else %}🚆 Train Journey{% endif %}
+                </span>
+                <h1 style="font-size: 22px; font-weight: 800; margin: 6px 0 2px;">{{ name }}</h1>
+                <p style="font-size: 14px; color: var(--text-secondary);">
+                    {{ source }} ➔ {{ destination }} | 📅 {{ journey_date }} | 💺 Seat {{ seat }} ({{ passenger_name }})
+                </p>
+            </div>
+
+            <div style="text-align: right;">
+                <span style="font-size: 12px; color: var(--text-muted);">Ticket Fare</span>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">₹{{ price }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Food Header & Category Filters -->
+    <div class="food-page-header">
+        <div>
+            <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 4px;">🍱 Pre-Order Fresh Meals &amp; Snacks</h2>
+            <p style="color: var(--text-secondary); font-size: 14px;">Hygienic, hot meals prepared fresh and delivered directly to your seat.</p>
+        </div>
+        <span class="optional-badge">Optional Add-On</span>
+    </div>
+
+    <!-- Category Nav -->
+    <div class="food-category-nav">
+        <button type="button" class="food-cat-btn active" data-filter="all">🍽️ All Menu (6)</button>
+        <button type="button" class="food-cat-btn" data-filter="veg">🌱 Pure Veg (3)</button>
+        <button type="button" class="food-cat-btn" data-filter="nonveg">🍗 Non-Veg (1)</button>
+        <button type="button" class="food-cat-btn" data-filter="beverage">☕ Snacks &amp; Drinks (2)</button>
+    </div>
+
+    <!-- Hidden Storage for Form Processing -->
+    <input type="hidden" id="hiddenFoodTotal" value="0">
+
+    <!-- Food Grid -->
+    <div class="food-grid">
+        
+        <!-- Item 1: Deluxe Veg Thali -->
+        <div class="food-card-item" id="card_veg_thali" data-category="veg">
+            <div class="food-item-top">
+                <div class="food-item-icon">🍛</div>
+                <div class="food-item-info">
+                    <div style="display: flex; align-items: center;">
+                        <span class="veg-indicator"></span>
+                        <h3>Deluxe Veg Thali</h3>
+                    </div>
+                    <p>Fragrant jeera rice, dal makhani, paneer subzi, 2 tawa rotis, pickle, and gulab jamun.</p>
+                </div>
+            </div>
+            <div class="food-item-bottom">
+                <div class="food-price-tag">₹160</div>
+                <div class="qty-stepper">
+                    <button type="button" onclick="changeFoodQty('veg_thali', -1)" aria-label="Decrease quantity">−</button>
+                    <span id="qty_veg_thali">0</span>
+                    <button type="button" onclick="changeFoodQty('veg_thali', 1)" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 2: Chicken Biryani -->
+        <div class="food-card-item" id="card_chicken_biryani" data-category="nonveg">
+            <div class="food-item-top">
+                <div class="food-item-icon">🍗</div>
+                <div class="food-item-info">
+                    <div style="display: flex; align-items: center;">
+                        <span class="non-veg-indicator"></span>
+                        <h3>Hyderabadi Chicken Biryani</h3>
+                    </div>
+                    <p>Dum-cooked basmati rice with succulent chicken pieces, boiled egg, mirchi ka salan, and raita.</p>
+                </div>
+            </div>
+            <div class="food-item-bottom">
+                <div class="food-price-tag">₹220</div>
+                <div class="qty-stepper">
+                    <button type="button" onclick="changeFoodQty('chicken_biryani', -1)" aria-label="Decrease quantity">−</button>
+                    <span id="qty_chicken_biryani">0</span>
+                    <button type="button" onclick="changeFoodQty('chicken_biryani', 1)" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 3: Paneer Butter Masala Meal Box -->
+        <div class="food-card-item" id="card_paneer_meal" data-category="veg">
+            <div class="food-item-top">
+                <div class="food-item-icon">🍲</div>
+                <div class="food-item-info">
+                    <div style="display: flex; align-items: center;">
+                        <span class="veg-indicator"></span>
+                        <h3>Paneer Butter Masala Box</h3>
+                    </div>
+                    <p>Rich creamy paneer gravy with peas pulao, 2 lachha parathas, and crunchy salad.</p>
+                </div>
+            </div>
+            <div class="food-item-bottom">
+                <div class="food-price-tag">₹180</div>
+                <div class="qty-stepper">
+                    <button type="button" onclick="changeFoodQty('paneer_meal', -1)" aria-label="Decrease quantity">−</button>
+                    <span id="qty_paneer_meal">0</span>
+                    <button type="button" onclick="changeFoodQty('paneer_meal', 1)" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 4: South Indian Breakfast -->
+        <div class="food-card-item" id="card_south_breakfast" data-category="veg">
+            <div class="food-item-top">
+                <div class="food-item-icon">🥞</div>
+                <div class="food-item-info">
+                    <div style="display: flex; align-items: center;">
+                        <span class="veg-indicator"></span>
+                        <h3>Idli &amp; Crispy Vada Combo</h3>
+                    </div>
+                    <p>3 steamed soft idlis, 1 crispy medu vada served with piping hot sambar and coconut chutney.</p>
+                </div>
+            </div>
+            <div class="food-item-bottom">
+                <div class="food-price-tag">₹90</div>
+                <div class="qty-stepper">
+                    <button type="button" onclick="changeFoodQty('south_breakfast', -1)" aria-label="Decrease quantity">−</button>
+                    <span id="qty_south_breakfast">0</span>
+                    <button type="button" onclick="changeFoodQty('south_breakfast', 1)" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 5: Tea & Samosa Combo -->
+        <div class="food-card-item" id="card_snack_combo" data-category="beverage">
+            <div class="food-item-top">
+                <div class="food-item-icon">🥟</div>
+                <div class="food-item-info">
+                    <div style="display: flex; align-items: center;">
+                        <span class="veg-indicator"></span>
+                        <h3>Tea &amp; Samosa Combo</h3>
+                    </div>
+                    <p>2 hot aloo samosas with mint chutney and a cup of aromatic masala chai.</p>
+                </div>
+            </div>
+            <div class="food-item-bottom">
+                <div class="food-price-tag">₹70</div>
+                <div class="qty-stepper">
+                    <button type="button" onclick="changeFoodQty('snack_combo', -1)" aria-label="Decrease quantity">−</button>
+                    <span id="qty_snack_combo">0</span>
+                    <button type="button" onclick="changeFoodQty('snack_combo', 1)" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 6: Mineral Water -->
+        <div class="food-card-item" id="card_mineral_water" data-category="beverage">
+            <div class="food-item-top">
+                <div class="food-item-icon">💧</div>
+                <div class="food-item-info">
+                    <div style="display: flex; align-items: center;">
+                        <span class="veg-indicator"></span>
+                        <h3>Packaged Mineral Water (1L)</h3>
+                    </div>
+                    <p>Sealed chilled packaged drinking water certified for safe travel hydration.</p>
+                </div>
+            </div>
+            <div class="food-item-bottom">
+                <div class="food-price-tag">₹20</div>
+                <div class="qty-stepper">
+                    <button type="button" onclick="changeFoodQty('mineral_water', -1)" aria-label="Decrease quantity">−</button>
+                    <span id="qty_mineral_water">0</span>
+                    <button type="button" onclick="changeFoodQty('mineral_water', 1)" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- STICKY ACTION & SUMMARY BAR -->
+    <div class="food-cart-sticky-bar">
+        <div class="cart-subtotal-block">
+            <div class="cart-icon-bubble">🍱</div>
+            <div>
+                <div style="font-size: 13px; color: var(--text-muted);">
+                    Food Subtotal (<span id="cartTotalItems">0</span> items)
+                </div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--text-primary);" id="cartTotalPrice">
+                    ₹0.00
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <button type="button" class="skip-food-link" onclick="proceedWithFood(true)">
+                Skip Food ➔
+            </button>
+
+            <button type="button" class="continue-btn" id="proceedPaymentBtn" onclick="proceedWithFood(false)" style="width: auto;">
+                <span>Proceed to Payment</span>
+                <span class="arrow">→</span>
+            </button>
+        </div>
+    </div>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/food.js') }}"></script>
+
+</body>
+</html>

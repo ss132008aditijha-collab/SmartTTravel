@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Operations Portal | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-page { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
+        .stat-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; box-shadow: var(--shadow-sm); }
+        .stat-card span { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .stat-card h3 { font-size: 30px; font-weight: 800; color: var(--primary); margin: 6px 0 2px; }
+        .stat-card p { font-size: 12px; color: var(--text-secondary); margin: 0; }
+        .admin-tab-nav { display: flex; gap: 10px; margin-bottom: 22px; border-bottom: 2px solid var(--border); padding-bottom: 8px; flex-wrap: wrap; }
+        .admin-tab-btn { background: none; border: none; padding: 10px 20px; font-weight: 700; font-size: 14px; color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-md); transition: var(--transition); }
+        .admin-tab-btn.active { background: var(--primary-subtle); color: var(--primary); }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; background: white; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
+        .admin-table th { background: var(--surface-muted); padding: 12px 14px; font-weight: 700; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+        .admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .admin-table tr:hover { background: #f8fafc; }
+        .badge-confirmed { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+        .badge-cancelled { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+        .form-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
+    </style>
+</head>
+<body style="background: #f8fafc;">
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel <span style="font-size: 11px; background: #1e3a8a; color: white; padding: 2px 8px; border-radius: 4px; margin-left: 6px;">ADMIN</span></span>
+        </a>
+    </div>
+
+    <div class="nav-links">
+        <a href="/">Public Site</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/admin" style="color: var(--primary); font-weight: 800;">Operations Dashboard</a>
+        <a href="/admin/logout" class="login-btn" style="border-color:#cbd5e1 !important; color:#475569 !important;">Admin Logout</a>
+    </div>
+</nav>
+
+<main class="admin-page">
+    
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <h1 style="font-size: 26px; font-weight: 800; margin-bottom: 4px;">🛠️ SmartTravel Operations Center</h1>
+            <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Real-time reservations, vehicle fleet management, and system analytics.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="/download-pdf/IRCTC28283125" class="ticket-action-btn btn-outline" style="font-size: 13px; padding: 8px 16px;">
+                📄 Sample PDF Slip
+            </a>
+            <a href="/" class="ticket-action-btn btn-primary" style="font-size: 13px; padding: 8px 16px;">
+                + New Passenger Booking
+            </a>
+        </div>
+    </div>
+
+    {% if message %}
+        <div style="background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 12px 18px; border-radius: var(--radius-md); margin-bottom: 20px; font-weight: 600;">
+            ✓ {{ message }}
+        </div>
+    {% endif %}
+
+    <!-- METRICS GRID -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Total Bookings</span>
+            <h3>{{ stats.total_bookings }}</h3>
+            <p>{{ stats.confirmed_bookings }} Confirmed · {{ stats.cancelled_bookings }} Cancelled</p>
+        </div>
+
+        <div class="stat-card">
+            <span>Demo Revenue</span>
+            <h3 style="color: #059669;">₹{{ "%.2f"|format(stats.total_revenue) }}</h3>
+            <p>From completed bookings</p>
+        </div>
+
+        <div class="stat-card">
+            <span>Fleet Vehicles</span>
+            <h3 style="color: #0284c7;">{{ stats.total_vehicles }}</h3>
+            <p>{{ stats.total_trains }} Trains · {{ stats.total_buses }} Buses</p>
+        </div>
+
+        <div class="stat-card">
+            <span>Registered Users</span>
+            <h3 style="color: #7c3aed;">{{ stats.total_users }}</h3>
+            <p>Active travel accounts</p>
+        </div>
+    </div>
+
+    <!-- TABS NAV -->
+    <div class="admin-tab-nav">
+        <button type="button" class="admin-tab-btn active" onclick="switchAdminTab('bookingsTab', this)">📋 All Bookings ({{ bookings|length }})</button>
+        <button type="button" class="admin-tab-btn" onclick="switchAdminTab('fleetTab', this)">🚆 Manage Fleet Vehicles ({{ vehicles|length }})</button>
+        <button type="button" class="admin-tab-btn" onclick="switchAdminTab('usersTab', this)">👥 Registered Accounts ({{ users|length }})</button>
+    </div>
+
+    <!-- TAB 1: ALL BOOKINGS -->
+    <section id="bookingsTab" class="admin-tab-content">
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>PNR / ID</th>
+                        <th>Type &amp; Vehicle</th>
+                        <th>Route</th>
+                        <th>Travel Date</th>
+                        <th>Passenger</th>
+                        <th>Seat / Berth</th>
+                        <th>Class &amp; Quota</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                        <tr>
+                            <td><strong>{{ b.booking_id }}</strong></td>
+                            <td>
+                                <div>{% if b.transport == 'bus' %}🚌{% else %}🚆{% endif %} {{ b.vehicle_name }}</div>
+                                <small style="color: var(--text-muted);">#{{ b.vehicle_number }}</small>
+                            </td>
+                            <td>{{ b.source }} ➔ {{ b.destination }}</td>
+                            <td>📅 {{ b.journey_date }}</td>
+                            <td>
+                                <strong>{{ b.passenger_name }}</strong>
+                                <div style="font-size: 11px; color: var(--text-muted);">{{ b.phone }}</div>
+                            </td>
+                            <td><strong style="color: var(--primary);">{{ b.seat }}</strong></td>
+                            <td><span style="font-size: 12px; font-weight: 700;">{{ b.vehicle_class }}</span></td>
+                            <td><strong>₹{{ b.total }}</strong></td>
+                            <td>
+                                <span class="{% if b.status == 'CONFIRMED' %}badge-confirmed{% else %}badge-cancelled{% endif %}">
+                                    {{ b.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="/ticket?booking_id={{ b.booking_id }}" class="select-btn" style="padding: 4px 10px; font-size: 11px;" target="_blank">View</a>
+                                    <a href="/download-pdf/{{ b.booking_id }}" class="modify-search-btn" style="padding: 4px 10px; font-size: 11px;">PDF</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                No bookings found in database yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- TAB 2: MANAGE FLEET VEHICLES -->
+    <section id="fleetTab" class="admin-tab-content" style="display: none;">
+        <!-- Add Vehicle Form -->
+        <div class="form-card">
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">➕ Add New Train or Bus to Schedule</h2>
+            <form action="/admin/add-vehicle" method="POST">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Transport Type</label>
+                        <select name="transport" class="form-control" required>
+                            <option value="train">Train (Indian Railways)</option>
+                            <option value="bus">Bus (Intercity Coach)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vehicle Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Tejas Superfast Express" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Number / Registration</label>
+                        <input type="text" name="number" class="form-control" placeholder="e.g. 22672 or KA-01-F-9988" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vehicle Category / Subtype</label>
+                        <input type="text" name="vehicle_type" class="form-control" placeholder="e.g. AC 3-Tier / Volvo Multi-Axle">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Source City</label>
+                        <input type="text" name="source" class="form-control" placeholder="e.g. Bengaluru" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Destination City</label>
+                        <input type="text" name="destination" class="form-control" placeholder="e.g. Chennai" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Departure Time (24h)</label>
+                        <input type="text" name="departure" class="form-control" placeholder="e.g. 06:15" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Arrival Time (24h)</label>
+                        <input type="text" name="arrival" class="form-control" placeholder="e.g. 11:30" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <input type="text" name="duration" class="form-control" placeholder="e.g. 5h 15m" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Base Price (₹)</label>
+                        <input type="number" step="0.01" name="price" class="form-control" placeholder="e.g. 750" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Total Seats</label>
+                        <input type="number" name="total_seats" class="form-control" placeholder="e.g. 48" value="48" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Amenities</label>
+                        <input type="text" name="amenities" class="form-control" placeholder="e.g. WiFi, Charging, Blankets">
+                    </div>
+                </div>
+
+                <button type="submit" class="continue-btn" style="max-width: 240px; margin-top: 10px;">
+                    <span>Add to Live Schedule</span>
+                    <span>✓</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Fleet List -->
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Vehicle Name &amp; No.</th>
+                        <th>Route</th>
+                        <th>Schedule</th>
+                        <th>Duration</th>
+                        <th>Base Price</th>
+                        <th>Seats</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vehicles %}
+                        <tr>
+                            <td>{{ v.id }}</td>
+                            <td>
+                                <span class="class-ac-badge {% if v.transport == 'train' %}badge-ac{% else %}badge-nonac{% endif %}">
+                                    {{ v.transport|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ v.name }}</strong>
+                                <small style="color: var(--text-muted); display: block;">#{{ v.number }}</small>
+                            </td>
+                            <td>{{ v.source }} ➔ {{ v.destination }}</td>
+                            <td>{{ v.departure }} - {{ v.arrival }}</td>
+                            <td>{{ v.duration }}</td>
+                            <td><strong>₹{{ v.price }}</strong></td>
+                            <td>{{ v.total_seats }}</td>
+                            <td>
+                                <form action="/admin/delete-vehicle/{{ v.id }}" method="POST" onsubmit="return confirm('Remove vehicle #{{ v.number }} from active schedules?');">
+                                    <button type="submit" style="background: none; border: 1px solid #fca5a5; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 700;">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- TAB 3: REGISTERED USERS -->
+    <section id="usersTab" class="admin-tab-content" style="display: none;">
+        <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Joined Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                        <tr>
+                            <td>#{{ u.id }}</td>
+                            <td><strong>{{ u.name }}</strong></td>
+                            <td>{{ u.email }}</td>
+                            <td>{{ u.phone }}</td>
+                            <td>
+                                <span style="font-weight: 700; color: {% if u.role == 'admin' %}#dc2626{% else %}var(--primary){% endif %};">
+                                    {{ u.role|upper }}
+                                </span>
+                            </td>
+                            <td>{{ u.created_at or 'Registered' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<script>
+function switchAdminTab(tabId, btn) {
+    document.querySelectorAll(".admin-tab-content").forEach(el => el.style.display = "none");
+    document.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
+    
+    document.getElementById(tabId).style.display = "block";
+    btn.classList.add("active");
+}
+</script>
+
+</body>
+</html>

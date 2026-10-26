@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passenger Details | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- BOOKING PROGRESS STEPS -->
+<div class="booking-progress-bar">
+    <div class="steps-list">
+        <div class="step-item completed"><span class="step-number">✓</span><span>Select Vehicle</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Boarding Point</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Seat Layout</span></div>
+        <div class="step-item active"><span class="step-number">4</span><span>Passengers</span></div>
+        <div class="step-item"><span class="step-number">5</span><span>Meals</span></div>
+        <div class="step-item"><span class="step-number">6</span><span>Payment</span></div>
+    </div>
+</div>
+
+<main class="passenger-page">
+    <div class="booking-container">
+
+        <!-- JOURNEY RECAP STRIP -->
+        <div class="journey-overview-card" style="padding: 20px 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="font-size: 32px;">{% if transport == 'bus' %}🚌{% else %}🚆{% endif %}</div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong style="font-size: 18px;">{{ name }}</strong>
+                            <span class="route-meta-pill" style="background: {% if transport == 'train' %}#1e3a8a{% else %}#0284c7{% endif %}; color: white; font-size: 11px;">
+                                {{ vehicle_class }}
+                            </span>
+                        </div>
+                        <span style="font-size: 13px; color: var(--text-secondary);">
+                            {{ source }} ➔ {{ destination }} | 📅 {{ journey_date }}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <span class="route-meta-pill" style="background: var(--primary-subtle); color: var(--primary); font-size: 13px; padding: 6px 12px;">
+                        📍 {{ boarding }}
+                    </span>
+                    <span class="route-meta-pill" style="background: var(--success-subtle); color: var(--success); font-size: 13px; padding: 6px 12px; font-weight: 800;">
+                        {% if transport == 'train' %}Berth: {{ seat }}{% else %}Seat: {{ seat }}{% endif %}
+                    </span>
+                    <span class="route-meta-pill" style="background: #fef3c7; color: #92400e; font-size: 13px; padding: 6px 12px; font-weight: 700;">
+                        Fare: ₹{{ price }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSENGER FORM CARD -->
+        <div class="passenger-card">
+            <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 6px;">
+                    {% if transport == 'train' %}IRCTC Traveller Documentation{% else %}Passenger Travel Information{% endif %}
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 14px;">
+                    Enter traveller details matching government-issued photo ID (Aadhaar / Voter ID / Passport) for boarding verification.
+                </p>
+            </div>
+
+            <form action="/food" method="GET" id="passengerForm">
+                
+                <!-- HIDDEN BOOKING PARAMETERS -->
+                <input type="hidden" name="name" value="{{ name }}">
+                <input type="hidden" name="number" value="{{ number }}">
+                <input type="hidden" name="price" value="{{ price }}">
+                <input type="hidden" name="transport" value="{{ transport }}">
+                <input type="hidden" name="source" value="{{ source }}">
+                <input type="hidden" name="destination" value="{{ destination }}">
+                <input type="hidden" name="date" value="{{ journey_date }}">
+                <input type="hidden" name="boarding" value="{{ boarding }}">
+                <input type="hidden" name="seat" value="{{ seat }}">
+                <input type="hidden" name="class" value="{{ vehicle_class }}">
+                <input type="hidden" name="quota" value="{{ quota }}">
+
+                <div class="form-grid-2">
+                    
+                    <!-- Passenger Full Name -->
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="passengerName">Passenger Full Name (As per Govt Photo ID) *</label>
+                        <input
+                            type="text"
+                            id="passengerName"
+                            name="passenger_name"
+                            class="form-control"
+                            placeholder="e.g. Aditi Sharma"
+                            value="{{ session.get('user_name', '') }}"
+                            required>
+                    </div>
+
+                    <!-- Age -->
+                    <div class="form-group">
+                        <label for="passengerAge">Age (Years) *</label>
+                        <input
+                            type="number"
+                            id="passengerAge"
+                            name="age"
+                            class="form-control"
+                            placeholder="e.g. 24"
+                            min="1"
+                            max="120"
+                            value="24"
+                            required>
+                    </div>
+
+                    <!-- Gender Selection -->
+                    <div class="form-group">
+                        <label>Gender *</label>
+                        <div class="gender-select-group">
+                            <label class="gender-radio-pill">
+                                <input type="radio" name="gender" value="Female" checked style="accent-color: var(--primary);">
+                                <span>Female</span>
+                            </label>
+                            <label class="gender-radio-pill">
+                                <input type="radio" name="gender" value="Male" style="accent-color: var(--primary);">
+                                <span>Male</span>
+                            </label>
+                            <label class="gender-radio-pill">
+                                <input type="radio" name="gender" value="Other" style="accent-color: var(--primary);">
+                                <span>Other</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {% if transport == 'train' %}
+                        <!-- Train Berth Preference -->
+                        <div class="form-group">
+                            <label for="berthPref">Berth Preference</label>
+                            <select id="berthPref" name="berth_pref" class="form-control">
+                                <option value="NO_PREF">No Preference</option>
+                                <option value="LB" selected>Lower Berth (LB)</option>
+                                <option value="MB">Middle Berth (MB)</option>
+                                <option value="UB">Upper Berth (UB)</option>
+                                <option value="SL">Side Lower (SL)</option>
+                                <option value="SU">Side Upper (SU)</option>
+                            </select>
+                        </div>
+
+                        <!-- Train ID Proof Type -->
+                        <div class="form-group">
+                            <label for="idProofType">Carried Photo ID Proof</label>
+                            <select id="idProofType" name="id_proof" class="form-control">
+                                <option value="AADHAAR">Aadhaar Card with Photo</option>
+                                <option value="VOTER_ID">Voter Identity Card</option>
+                                <option value="PASSPORT">Passport</option>
+                                <option value="DRIVING_LICENCE">Driving Licence</option>
+                            </select>
+                        </div>
+                    {% endif %}
+
+                    <!-- Contact Phone -->
+                    <div class="form-group">
+                        <label for="passengerPhone">Mobile Number (SMS E-Ticket &amp; Live Tracking) *</label>
+                        <input
+                            type="tel"
+                            id="passengerPhone"
+                            name="phone"
+                            class="form-control"
+                            placeholder="10-digit mobile number"
+                            pattern="[0-9]{10}"
+                            maxlength="10"
+                            value="9876543210"
+                            required>
+                    </div>
+
+                    <!-- Contact Email -->
+                    <div class="form-group">
+                        <label for="passengerEmail">Email Address (PDF E-Ticket Delivery) *</label>
+                        <input
+                            type="email"
+                            id="passengerEmail"
+                            name="email"
+                            class="form-control"
+                            placeholder="name@example.com"
+                            value="{{ session.get('user_email', 'guest@smarttravel.com') }}"
+                            required>
+                    </div>
+
+                </div>
+
+                <div style="background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin: 10px 0 24px; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">🛡️</span>
+                    <span>
+                        {% if transport == 'train' %}
+                            Conforming to Indian Railways commercial rules. Senior citizen concessions &amp; berth preference are subject to chart allocation.
+                        {% else %}
+                            Bus conductor will verify passenger name and contact number at pick-up bay.
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- SUBMIT BUTTON -->
+                <button type="submit" class="continue-btn">
+                    <span>Continue to Meal Selection</span>
+                    <span>➔</span>
+                </button>
+
+            </form>
+        </div>
+
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/passenger.js') }}"></script>
+
+</body>
+</html>

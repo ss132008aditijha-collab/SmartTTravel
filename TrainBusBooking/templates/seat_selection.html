@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select {% if transport == 'train' %}Berth{% else %}Seat{% endif %} | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- BOOKING PROGRESS STEPS -->
+<div class="booking-progress-bar">
+    <div class="steps-list">
+        <div class="step-item completed"><span class="step-number">✓</span><span>Select Vehicle</span></div>
+        <div class="step-item completed"><span class="step-number">✓</span><span>Boarding Point</span></div>
+        <div class="step-item active"><span class="step-number">3</span><span>{% if transport == 'train' %}Berth Allocation{% else %}Seat Layout{% endif %}</span></div>
+        <div class="step-item"><span class="step-number">4</span><span>Passengers</span></div>
+        <div class="step-item"><span class="step-number">5</span><span>Meals</span></div>
+        <div class="step-item"><span class="step-number">6</span><span>Payment</span></div>
+    </div>
+</div>
+
+<main class="seat-page">
+    
+    <!-- Top Summary Banner -->
+    <div class="journey-overview-card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <span class="vehicle-type-badge" style="background: {% if transport == 'train' %}#1e3a8a{% else %}#0284c7{% endif %}; color: white;">
+                    {% if transport == 'train' %}
+                        🚆 Indian Railways Coach: <strong>{% if '1A' in vehicle_class %}H1 (1A){% elif '2A' in vehicle_class %}A2 (2A){% elif 'SL' in vehicle_class %}S4 (SL){% else %}B4 (3A){% endif %}</strong>
+                    {% else %}
+                        🚌 Bus Layout: <strong>{{ vehicle_class }}</strong>
+                    {% endif %}
+                </span>
+                <h1 style="font-size: 22px; font-weight: 800; margin: 6px 0 2px;">{{ name }} · {{ number }}</h1>
+                <p style="font-size: 14px; color: var(--text-secondary);">
+                    {{ source }} ➔ {{ destination }} | 📅 {{ journey_date }} | 📍 {{ boarding }}
+                </p>
+            </div>
+
+            <div style="text-align: right;">
+                <span style="font-size: 12px; color: var(--text-muted);">Base Fare per Ticket</span>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">₹<span id="basePriceVal">{{ price }}</span></div>
+                <small style="font-size: 11px; color: var(--text-muted);">{{ vehicle_class }}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Two-Column Layout -->
+    <div class="seat-selection-layout">
+        
+        <!-- Left: Interactive Layout -->
+        <div class="seat-card">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 800;">
+                        {% if transport == 'train' %}
+                            Coach Berth Map · {% if '1A' in vehicle_class %}AC First Class (H1){% elif '2A' in vehicle_class %}AC 2-Tier (A2){% elif 'SL' in vehicle_class %}Sleeper Class (S4){% else %}AC 3-Tier (B4){% endif %}
+                        {% else %}
+                            Bus Cabin Map · {{ vehicle_class }}
+                        {% endif %}
+                    </h2>
+                    <span style="font-size: 13px; color: var(--text-muted);">
+                        {% if transport == 'train' %}Click to choose your preferred berth (Lower / Middle / Upper / Side){% else %}Click any green/white available seat to reserve{% endif %}
+                    </span>
+                </div>
+
+                <!-- Bus Deck Selector (Lower / Upper Deck) for sleeper buses -->
+                {% if transport == 'bus' and 'sleeper' in vehicle_class|lower %}
+                    <div class="deck-selector-nav">
+                        <button type="button" class="deck-tab-btn active" id="deckLowerBtn" onclick="switchBusDeck('lower')">
+                            🛏️ Lower Deck
+                        </button>
+                        <button type="button" class="deck-tab-btn" id="deckUpperBtn" onclick="switchBusDeck('upper')">
+                            🛏️ Upper Deck
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Seat Legend -->
+            <div class="seat-legend">
+                <div class="legend-item">
+                    <span class="seat-sample available"></span>
+                    <span>Available</span>
+                </div>
+                <div class="legend-item">
+                    <span class="seat-sample selected"></span>
+                    <span>Selected</span>
+                </div>
+                <div class="legend-item">
+                    <span class="seat-sample occupied"></span>
+                    <span>Booked</span>
+                </div>
+            </div>
+
+            <!-- Seat / Berth Layout Structure -->
+            <div class="vehicle-cabin" style="max-width: {% if transport == 'train' %}520px{% else %}420px{% endif %};">
+                <div class="cabin-driver">
+                    <span>
+                        {% if transport == 'bus' %}
+                            🚍 Driver Cabin &amp; Entry Steps
+                        {% else %}
+                            🚪 Coach Entry Vestibule &amp; Restrooms
+                        {% endif %}
+                    </span>
+                    <span>Direction ➔</span>
+                </div>
+
+                <div class="seat-layout">
+                    {% if transport == 'train' %}
+                        
+                        {% if '2A' in vehicle_class %}
+                            <!-- ================= TRAIN: 2A (AC 2-TIER) LAYOUT (NO MIDDLE BERTH) ================= -->
+                            <div class="seats-grid-bus">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin: 4px 0 8px;">
+                                    <span>Main Berths (2-Tier with Curtains)</span>
+                                    <span>Side Berths</span>
+                                </div>
+
+                                <!-- Bay 1 -->
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 8px; border-radius: 8px; margin-bottom: 8px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 12px;">
+                                        <button type="button" class="seat-item available" data-seat="1-LB" data-type="Lower Berth (LB)">1<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="2-UB" data-type="Upper Berth (UB)">2<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">AISLE</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item available" data-seat="5-SL" data-type="Side Lower (SL)">5<small style="font-size:9px;">SL</small></button>
+                                    </div>
+                                </div>
+
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 8px; border-radius: 8px; margin-bottom: 14px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 12px;">
+                                        <button type="button" class="seat-item available" data-seat="3-LB" data-type="Lower Berth (LB)">3<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item occupied booked" data-seat="4-UB" data-type="Upper Berth (UB)" disabled>4<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">AISLE</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item available" data-seat="6-SU" data-type="Side Upper (SU)">6<small style="font-size:9px;">SU</small></button>
+                                    </div>
+                                </div>
+
+                                <!-- Bay 2 -->
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 8px; border-radius: 8px; margin-bottom: 8px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 12px;">
+                                        <button type="button" class="seat-item occupied booked" data-seat="7-LB" data-type="Lower Berth (LB)" disabled>7<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="8-UB" data-type="Upper Berth (UB)">8<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">AISLE</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item available" data-seat="11-SL" data-type="Side Lower (SL)">11<small style="font-size:9px;">SL</small></button>
+                                    </div>
+                                </div>
+
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 12px;">
+                                        <button type="button" class="seat-item available" data-seat="9-LB" data-type="Lower Berth (LB)">9<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="10-UB" data-type="Upper Berth (UB)">10<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">AISLE</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item occupied booked" data-seat="12-SU" data-type="Side Upper (SU)" disabled>12<small style="font-size:9px;">SU</small></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% elif '1A' in vehicle_class %}
+                            <!-- ================= TRAIN: 1A (AC FIRST CLASS) PRIVATE COUPES ================= -->
+                            <div class="seats-grid-bus">
+                                <div style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                                    Coupe A (2 Berths Private Cabin with Lockable Door)
+                                </div>
+                                <div class="bus-seat-row" style="background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 14px; border: 1px solid #bfdbfe;">
+                                    <button type="button" class="seat-item available" data-seat="Coupe A-LB" data-type="First Class Lower Berth" style="width: 80px; height: 50px;">A - LB</button>
+                                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">PRIVATE COUPE</span>
+                                    <button type="button" class="seat-item available" data-seat="Coupe A-UB" data-type="First Class Upper Berth" style="width: 80px; height: 50px;">A - UB</button>
+                                </div>
+
+                                <div style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                                    Cabin B (4 Berths Luxury Family Suite)
+                                </div>
+                                <div class="bus-seat-row" style="background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #bfdbfe;">
+                                    <div style="display: flex; gap: 8px;">
+                                        <button type="button" class="seat-item available" data-seat="Cabin B-LB1" data-type="First Class Lower Berth" style="width: 70px;">B - LB1</button>
+                                        <button type="button" class="seat-item available" data-seat="Cabin B-UB1" data-type="First Class Upper Berth" style="width: 70px;">B - UB1</button>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button type="button" class="seat-item occupied booked" data-seat="Cabin B-LB2" data-type="First Class Lower Berth" disabled style="width: 70px;">B - LB2</button>
+                                        <button type="button" class="seat-item available" data-seat="Cabin B-UB2" data-type="First Class Upper Berth" style="width: 70px;">B - UB2</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% elif 'CC' in vehicle_class or 'EC' in vehicle_class %}
+                            <!-- ================= TRAIN: CHAIR CAR (CC / EC) ================= -->
+                            <div class="seats-grid-bus">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">
+                                    <span>Window · Middle · Aisle</span>
+                                    <span>Aisle · Window</span>
+                                </div>
+                                {% for row in ['1', '2', '3', '4', '5'] %}
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item available" data-seat="{{ row }}A" data-type="Window Seat">{{ row }}A</button>
+                                            <button type="button" class="seat-item available" data-seat="{{ row }}B" data-type="Middle Seat">{{ row }}B</button>
+                                            <button type="button" class="seat-item available" data-seat="{{ row }}C" data-type="Aisle Seat">{{ row }}C</button>
+                                        </div>
+                                        <div class="bus-aisle">PATH</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item {% if row == '2' %}occupied booked{% else %}available{% endif %}" data-seat="{{ row }}D" data-type="Aisle Seat" {% if row == '2' %}disabled{% endif %}>{{ row }}D</button>
+                                            <button type="button" class="seat-item available" data-seat="{{ row }}E" data-type="Window Seat">{{ row }}E</button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                        {% else %}
+                            <!-- ================= TRAIN: 3A (AC 3-TIER) & SL (SLEEPER) 3-TIER BAYS ================= -->
+                            <div class="seats-grid-bus">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin: 4px 0 8px;">
+                                    <span>Main Berths (LB / MB / UB)</span>
+                                    <span>Side Berths (SL / SU)</span>
+                                </div>
+
+                                <!-- Bay 1 -->
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 6px; border-radius: 6px; margin-bottom: 6px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 6px;">
+                                        <button type="button" class="seat-item available" data-seat="1-LB" data-type="Lower Berth (LB)">1<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="2-MB" data-type="Middle Berth (MB)">2<small style="font-size:9px;">MB</small></button>
+                                        <button type="button" class="seat-item occupied booked" data-seat="3-UB" data-type="Upper Berth (UB)" disabled>3<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">PATH</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item available" data-seat="7-SL" data-type="Side Lower (SL)">7<small style="font-size:9px;">SL</small></button>
+                                    </div>
+                                </div>
+
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 6px; border-radius: 6px; margin-bottom: 12px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 6px;">
+                                        <button type="button" class="seat-item available" data-seat="4-LB" data-type="Lower Berth (LB)">4<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="5-MB" data-type="Middle Berth (MB)">5<small style="font-size:9px;">MB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="6-UB" data-type="Upper Berth (UB)">6<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">PATH</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item occupied booked" data-seat="8-SU" data-type="Side Upper (SU)" disabled>8<small style="font-size:9px;">SU</small></button>
+                                    </div>
+                                </div>
+
+                                <!-- Bay 2 -->
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 6px; border-radius: 6px; margin-bottom: 6px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 6px;">
+                                        <button type="button" class="seat-item occupied booked" data-seat="9-LB" data-type="Lower Berth (LB)" disabled>9<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="10-MB" data-type="Middle Berth (MB)">10<small style="font-size:9px;">MB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="11-UB" data-type="Upper Berth (UB)">11<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">PATH</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item available" data-seat="15-SL" data-type="Side Lower (SL)">15<small style="font-size:9px;">SL</small></button>
+                                    </div>
+                                </div>
+
+                                <div class="bus-seat-row" style="background: #f8fafc; padding: 6px; border-radius: 6px; border: 1px dashed var(--border);">
+                                    <div class="bus-seat-pair" style="gap: 6px;">
+                                        <button type="button" class="seat-item available" data-seat="12-LB" data-type="Lower Berth (LB)">12<small style="font-size:9px;">LB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="13-MB" data-type="Middle Berth (MB)">13<small style="font-size:9px;">MB</small></button>
+                                        <button type="button" class="seat-item available" data-seat="14-UB" data-type="Upper Berth (UB)">14<small style="font-size:9px;">UB</small></button>
+                                    </div>
+                                    <div class="bus-aisle">PATH</div>
+                                    <div class="bus-seat-pair">
+                                        <button type="button" class="seat-item available" data-seat="16-SU" data-type="Side Upper (SU)">16<small style="font-size:9px;">SU</small></button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    {% else %}
+                        
+                        <!-- ================= BUS LAYOUT: SLEEPER (2+1) OR SEATER (2+2) ================= -->
+                        {% if 'sleeper' in vehicle_class|lower %}
+                            <!-- BUS SLEEPER DECK (LOWER DECK VIEW) -->
+                            <div id="busLowerDeck" class="bus-deck-container">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+                                    <span>Double Sleeper Berths (Left)</span>
+                                    <span>Single Window Berth (Right)</span>
+                                </div>
+                                <div class="seats-grid-bus">
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L1" data-type="Lower Double Sleeper">L1</button>
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L2" data-type="Lower Double Sleeper">L2</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L3" data-type="Lower Single Window Sleeper">L3</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk occupied booked" data-seat="L4" data-type="Lower Double Sleeper" disabled>L4</button>
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L5" data-type="Lower Double Sleeper">L5</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L6" data-type="Lower Single Window Sleeper">L6</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L7" data-type="Lower Double Sleeper">L7</button>
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="L8" data-type="Lower Double Sleeper">L8</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk occupied booked" data-seat="L9" data-type="Lower Single Window Sleeper" disabled>L9</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BUS SLEEPER DECK (UPPER DECK VIEW - HIDDEN INITIALLY) -->
+                            <div id="busUpperDeck" class="bus-deck-container" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #0284c7; margin-bottom: 8px;">
+                                    <span>Upper Double Sleeper Berths</span>
+                                    <span>Upper Single Window Berth</span>
+                                </div>
+                                <div class="seats-grid-bus">
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U1" data-type="Upper Double Sleeper">U1</button>
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U2" data-type="Upper Double Sleeper">U2</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U3" data-type="Upper Single Window Sleeper">U3</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U4" data-type="Upper Double Sleeper">U4</button>
+                                            <button type="button" class="seat-item bus-sleeper-bunk occupied booked" data-seat="U5" data-type="Upper Double Sleeper" disabled>U5</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U6" data-type="Upper Single Window Sleeper">U6</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U7" data-type="Upper Double Sleeper">U7</button>
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U8" data-type="Upper Double Sleeper">U8</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item bus-sleeper-bunk available" data-seat="U9" data-type="Upper Single Window Sleeper">U9</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- BUS SEATER (2+2 PUSHBACK SEATS) -->
+                            <div class="seats-grid-bus">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+                                    <span>Window · Aisle</span>
+                                    <span>Aisle · Window</span>
+                                </div>
+                                {% for r in ['A', 'B', 'C', 'D'] %}
+                                    <div class="bus-seat-row">
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item available" data-seat="{{ r }}1" data-type="Window Seat">{{ r }}1</button>
+                                            <button type="button" class="seat-item available" data-seat="{{ r }}2" data-type="Aisle Seat">{{ r }}2</button>
+                                        </div>
+                                        <div class="bus-aisle">AISLE</div>
+                                        <div class="bus-seat-pair">
+                                            <button type="button" class="seat-item {% if r == 'B' %}occupied booked{% else %}available{% endif %}" data-seat="{{ r }}3" data-type="Aisle Seat" {% if r == 'B' %}disabled{% endif %}>{{ r }}3</button>
+                                            <button type="button" class="seat-item available" data-seat="{{ r }}4" data-type="Window Seat">{{ r }}4</button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                                <!-- Back Row 5 Seats -->
+                                <div class="bus-seat-row" style="justify-content: center; gap: 8px; margin-top: 6px;">
+                                    <button type="button" class="seat-item available" data-seat="E1" data-type="Window Seat">E1</button>
+                                    <button type="button" class="seat-item available" data-seat="E2" data-type="Middle Seat">E2</button>
+                                    <button type="button" class="seat-item available" data-seat="E3" data-type="Center Seat">E3</button>
+                                    <button type="button" class="seat-item available" data-seat="E4" data-type="Middle Seat">E4</button>
+                                    <button type="button" class="seat-item available" data-seat="E5" data-type="Window Seat">E5</button>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Real-time Selection Summary Card -->
+        <aside class="seat-sidebar-summary">
+            <h3>Selection Summary</h3>
+
+            <div class="summary-pill-box">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 13px; color: var(--text-secondary);">Selected {% if transport == 'train' %}Berth{% else %}Seat{% endif %}</span>
+                    <strong id="selectedSeatDisplay" style="color: var(--primary); font-size: 16px;">None Selected</strong>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 13px; color: var(--text-secondary);">Position / Type</span>
+                    <strong id="selectedSeatTypeDisplay" style="color: var(--text-primary); font-size: 13px;">—</strong>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 13px; color: var(--text-secondary);">Travel Class</span>
+                    <strong style="color: var(--primary); font-size: 13px;">{{ vehicle_class }}</strong>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px dashed var(--border);">
+                    <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Total Base Fare</span>
+                    <strong id="totalSeatPriceDisplay" style="color: var(--primary); font-size: 20px;">₹0</strong>
+                </div>
+            </div>
+
+            <div style="background: var(--surface-muted); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary); margin-bottom: 20px;">
+                {% if transport == 'train' %}
+                    💡 <strong>IRCTC Guarantee:</strong> Confirmed berth allotment based on current chart availability.
+                {% else %}
+                    💡 <strong>Live Bus Lock:</strong> Your seat is locked for 10 minutes to finish passenger details.
+                {% endif %}
+            </div>
+
+            <button type="button"
+                    class="continue-btn btn-disabled"
+                    id="continueToPassengerBtn"
+                    onclick="continueToPassenger()">
+                <span>Continue to Passenger Details</span>
+                <span>➔</span>
+            </button>
+        </aside>
+
+    </div>
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/seat-selection.js') }}"></script>
+<script>
+function switchBusDeck(deck) {
+    const lowerDeck = document.getElementById("busLowerDeck");
+    const upperDeck = document.getElementById("busUpperDeck");
+    const lowerBtn = document.getElementById("deckLowerBtn");
+    const upperBtn = document.getElementById("deckUpperBtn");
+
+    if (deck === "lower") {
+        if (lowerDeck) lowerDeck.style.display = "block";
+        if (upperDeck) upperDeck.style.display = "none";
+        if (lowerBtn) lowerBtn.classList.add("active");
+        if (upperBtn) upperBtn.classList.remove("active");
+    } else {
+        if (lowerDeck) lowerDeck.style.display = "none";
+        if (upperDeck) upperDeck.style.display = "block";
+        if (upperBtn) upperBtn.classList.add("active");
+        if (lowerBtn) lowerBtn.classList.remove("active");
+    }
+}
+</script>
+
+</body>
+</html>

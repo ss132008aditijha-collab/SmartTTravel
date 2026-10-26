@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Ticket {{ booking_id }} | SmartTravel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="ticket-body">
+
+<!-- NAVBAR (Hidden on print) -->
+<nav class="navbar">
+    <div class="logo">
+        <a href="/">
+            <span style="font-size: 26px;">🚆</span>
+            <span>SmartTravel</span>
+        </a>
+    </div>
+
+    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <div class="nav-links" id="mainNav">
+        <a href="/">Home</a>
+        <a href="/bookings">My Bookings</a>
+        <a href="/#about">About</a>
+
+        <div class="nav-auth-group">
+            {% if session.get("user_id") %}
+                <span class="welcome-user">Hi, {{ session.get("user_name") }}</span>
+                <a href="/logout" class="login-btn">Logout</a>
+            {% else %}
+                <a href="/login" class="login-btn">Login</a>
+                <a href="/register" class="register-btn">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<main class="ticket-wrapper">
+    
+    <!-- SUCCESS CONFIRMATION BADGE (Hidden on print) -->
+    <div class="ticket-success-header">
+        <div class="success-check-badge">✓</div>
+        <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 6px;">Reservation Confirmed!</h1>
+        <p style="color: var(--text-secondary); font-size: 15px;">
+            Your {% if transport == 'train' %}Indian Railways Train{% else %}Intercity Bus{% endif %} e-ticket is confirmed. Download the PDF below or print directly.
+        </p>
+    </div>
+
+    <!-- MAIN E-TICKET CARD (TARGET FOR PDF EXPORT) -->
+    <div class="e-ticket-card" id="eTicketCardContainer">
+        
+        <!-- HEADER STRIP -->
+        <div class="ticket-head-strip" style="background: {% if transport == 'train' %}linear-gradient(135deg, #0f172a, #1e3a8a){% else %}linear-gradient(135deg, #0369a1, #0284c7){% endif %};">
+            <div class="ticket-brand-mark">
+                <span style="font-size: 32px;">{% if transport == 'bus' %}🚌{% else %}🚆{% endif %}</span>
+                <div>
+                    <div style="font-size: 19px; font-weight: 800; line-height: 1.2;">
+                        {% if transport == 'train' %}
+                            SMARTTRAVEL · ELECTRONIC DEMO RESERVATION SLIP
+                        {% else %}
+                            SMARTTRAVEL · INTERCITY BUS DEMO TRAVEL PASS
+                        {% endif %}
+                    </div>
+                    <span style="font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-top: 2px;">
+                        Academic Prototype · Simulated Payment Confirmed · Not an Operator Ticket
+                    </span>
+                </div>
+            </div>
+
+            <div class="booking-ref-box">
+                <span>SMARTTRAVEL DEMO REF</span>
+                <strong id="ticketBookingId">{{ booking_id }}</strong>
+                <button type="button" id="copyBookingIdBtn" title="Copy Demo Reference" style="background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 4px; padding: 2px 6px; font-size: 11px; cursor: pointer; margin-left: 6px;">📋 Copy</button>
+                <div style="margin-top: 4px;">
+                    <span class="status-badge confirmed" style="background: rgba(16, 185, 129, 0.25); color: #ecfdf5; border: 1px solid #10b981; font-weight: 800;">
+                        ✓ DEMO CONFIRMED
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TICKET BODY -->
+        <div class="ticket-body-content">
+            
+            <!-- Route Banner -->
+            <div class="ticket-route-banner">
+                <div>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">DEPARTURE ORIGIN</span>
+                    <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 2px 0;">{{ source }}</h2>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">📍 {{ boarding }}</p>
+                </div>
+
+                <div style="text-align: center; padding: 0 16px;">
+                    <span style="font-size: 24px; color: var(--primary);">➔</span>
+                    <span style="display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Direct Trip</span>
+                </div>
+
+                <div style="text-align: right;">
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">DESTINATION</span>
+                    <h2 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 2px 0;">{{ destination }}</h2>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">🏁 Central Terminal</p>
+                </div>
+            </div>
+
+            <!-- Vehicle & Journey Details Grid -->
+            <div class="ticket-info-grid">
+                <div class="ticket-info-item">
+                    <span>{% if transport == 'train' %}Train Name{% else %}Bus Operator / Name{% endif %}</span>
+                    <strong>{{ name }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>{% if transport == 'train' %}Train Number{% else %}Bus Registration No.{% endif %}</span>
+                    <strong>#{{ number }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Travel Class / Category</span>
+                    <strong style="color: var(--primary); font-size: 16px;">{{ vehicle_class }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Travel Date</span>
+                    <strong>📅 {{ journey_date }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>{% if transport == 'train' %}Coach &amp; Berth{% else %}Seat / Berth Number{% endif %}</span>
+                    <strong style="color: var(--primary); font-size: 18px;">
+                        {% if transport == 'train' %}
+                            {% if '1A' in vehicle_class %}Coach H1 · Berth {{ seat }}{% elif '2A' in vehicle_class %}Coach A2 · Berth {{ seat }}{% elif 'SL' in vehicle_class %}Coach S4 · Berth {{ seat }}{% else %}Coach B4 · Berth {{ seat }}{% endif %}
+                        {% else %}
+                            Seat {{ seat }}
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>{% if transport == 'train' %}Quota / Reservation{% else %}Service Type{% endif %}</span>
+                    <strong>{{ quota }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Passenger Name</span>
+                    <strong>{{ passenger_name }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Age &amp; Gender</span>
+                    <strong>{{ age }} Yrs / {{ gender }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Passenger Mobile</span>
+                    <strong>{{ phone }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Registered Email</span>
+                    <strong style="word-break: break-all;">{{ email }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Payment Method</span>
+                    <strong>{{ payment_method | upper }}</strong>
+                </div>
+
+                <div class="ticket-info-item">
+                    <span>Charting Status</span>
+                    <strong style="color: var(--success);">CNF (Confirmed)</strong>
+                </div>
+            </div>
+
+            <!-- Perforated Tear Line -->
+            <div class="ticket-tear-line"></div>
+
+            <!-- Fare & QR Verification Section -->
+            <div class="ticket-verification-row">
+                <!-- Fare Breakdown Table -->
+                <div style="flex: 1;">
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 10px;">
+                        Official Fare &amp; Tax Receipt
+                    </span>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                        <span style="color: var(--text-secondary);">Ticket Fare ({{ vehicle_class }})</span>
+                        <strong>₹{{ "%.2f"|format(price|float) }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                        <span style="color: var(--text-secondary);">Catering / Food Add-on</span>
+                        <strong>₹{{ "%.2f"|format(food_total|float) }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                        <span style="color: var(--text-secondary);">Convenience Fee &amp; GST</span>
+                        <strong style="color: var(--success);">₹0.00 (Zero Fee)</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; padding-top: 8px; border-top: 1px solid var(--border); color: var(--primary);">
+                        <span>Total Paid</span>
+                        <span>₹{{ "%.2f"|format(total|float) }}</span>
+                    </div>
+                </div>
+
+                <!-- QR Code Box -->
+                <div style="text-align: center; border-left: 1px solid var(--border); padding-left: 24px;">
+                    <div id="ticketQrCodeBox"></div>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Scan for Boarding Pass
+                    </span>
+                </div>
+            </div>
+
+            <!-- Travel Instructions -->
+            <div style="background: var(--surface-muted); border-radius: var(--radius-sm); padding: 12px 16px; margin-top: 24px; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                <strong>📌 Important Boarding Notice:</strong>
+                {% if transport == 'train' %}
+                    Passengers must carry an original government-issued photo identity proof (Aadhaar / Voter ID / Passport) during travel. Please report at <strong>{{ boarding }}</strong> at least 20 minutes before scheduled departure.
+                {% else %}
+                    Show this e-ticket on your mobile phone or printed copy to the bus crew at <strong>{{ boarding }}</strong>. Baggage allowance: Up to 15 kg per passenger.
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ACTION BUTTONS (Hidden on print) -->
+    <div class="ticket-actions-bar">
+        <!-- Direct Server-Generated Official Vector PDF Download (Guaranteed Never Blank) -->
+        <a href="/download-pdf/{{ booking_id }}" class="ticket-action-btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-size: 15px; padding: 14px 26px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <span>📥</span>
+            <span>Download Official PDF Ticket</span>
+        </a>
+
+        <!-- Open PDF in Browser Tab -->
+        <a href="/view-pdf/{{ booking_id }}" target="_blank" rel="noopener" class="ticket-action-btn btn-outline" style="font-size: 14px; padding: 14px 20px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>👁️</span>
+            <span>Open PDF in New Tab</span>
+        </a>
+
+        <!-- Direct Native / Printable Window Print -->
+        <button type="button" class="ticket-action-btn btn-primary" onclick="printTicket()" style="font-size: 14px; padding: 14px 22px;">
+            🖨️ Print Ticket
+        </button>
+
+        <a href="/bookings" class="ticket-action-btn btn-outline">
+            📋 My Bookings
+        </a>
+
+        <a href="/" class="ticket-action-btn btn-outline">
+            🏠 Book Another Trip
+        </a>
+    </div>
+
+</main>
+
+<!-- External vendor library for client-side PDF generation (stored locally) -->
+<script src="{{ url_for('static', filename='js/html2pdf.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ticket.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai-assistant.js') }}"></script>
+
+</body>
+</html>
