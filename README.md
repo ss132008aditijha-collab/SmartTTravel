@@ -1,166 +1,150 @@
-# SmartTravel — AI-Powered Train & Bus Ticket Booking System
+# 🚆 SmartTravel — Train & Bus Ticket Booking System
 
-A full-stack, database-backed, and AI-powered travel reservation web application built with **Python Flask**, **SQLite**, **Node.js/Express**, and **Google Gemini AI**.
-
-Designed as a software engineering college project and live reservation prototype.
+A full-stack, unified train and bus ticket reservation platform developed for a 5th-semester college mini-project. Engineered with Python Flask, SQLite, vanilla HTML5, CSS3, and modern JavaScript.
 
 ---
 
-## 🌟 Key Highlights & System Features
+## 🌟 Key Highlights & Fixes
 
-### 1. Indian Railways & Intercity Bus Search Engine
-- **Trains**: Full support for real railway classes:
-  - **1A** (AC First Class — Private lockable coupe)
-  - **2A** (AC 2-Tier — Curtains & bedroll)
-  - **3A** (AC 3-Tier — Air conditioned 3-tier berths)
-  - **3E** (AC 3 Economy)
-  - **SL** (Sleeper Class — Non-AC open window)
-  - **CC / EC** (AC Chair Car / Executive Chair Car for Vande Bharat & Shatabdi)
-- **IRCTC Quotas**: General (GN), Tatkal (TQ), Ladies (LD), Senior Citizen (SS).
-- **Buses**: Scania Luxury A/C Sleeper, Volvo Multi-Axle A/C Semi-Sleeper, Electric AC (EV), Non-AC Sleeper, Non-AC Seater.
-- **Filters**: Real-time AC vs Non-AC toggle, departure time slots, price range slider, and class pills.
-
-### 2. Interactive Coach & Deck Layouts
-- **Trains**: Class-specific railway bay layouts (2-Tier LB/UB/SL/SU with no middle berth; 3-Tier LB/MB/UB/SL/SU; 1A Coupes).
-- **Buses**: Interactive **Lower Deck** and **Upper Deck** switcher for sleeper coaches with single window berths and double companion bunks.
-
-### 3. Google Gemini AI Integration
-- **Floating AI Travel Assistant**: Interactive chatbot available across all pages answering train class differences, bus layouts, cancellation rules, and travel guidelines in **English & Hindi**.
-- **AI Journey Recommendations** (`/api/ai/recommend`): Real-time analysis of routes and budget to highlight cheapest, fastest, and best value journeys.
-- **AI Travel Planner** (`/api/ai/plan`): Customized multi-day itineraries, daily budget estimates, must-visit sights, and packing tips for any destination.
-
-### 4. Direct Vector PDF E-Ticket Engine
-- Native pure-Python PDF generator (`TrainBusBooking/pdf_generator.py`) producing official PDF 1.4 documents.
-- Includes Indian Railways ERS / Bus Pass header, verified PNR, route timeline, coach and berth assignment, passenger details, itemized GST fare receipt, and digital boarding barcode.
-- One-click direct PDF download (`/download-pdf/<pnr>`) and inline browser preview (`/view-pdf/<pnr>`).
-
-### 5. Passenger Management & Meal Ordering
-- Passenger details with Govt photo ID proof selection (Aadhaar, Voter ID, Passport, Driving Licence) and berth preferences.
-- Optional onboard catering module (`/food`) with vegetarian thalis, chicken biryani, snack platters, and beverages.
-
-### 6. Demo Payment Gateway
-- Simulated UPI QR scanning, Credit/Debit card validation, Net Banking, and Viva/Demo counter confirmation with instant transaction reference generation.
-
-### 7. My Bookings & Cancellation
-- User booking dashboard with status filters (Upcoming, Completed, Cancelled).
-- One-click cancellation releasing booked seats back to availability with demo refund calculation.
-
-### 8. Operations Admin Portal (`/admin`)
-- Operations dashboard displaying total bookings, revenue generated, fleet statistics, and registered users.
-- Live vehicle fleet manager with add/delete schedule forms and real-time passenger lookup.
+- **100% Demo & Offline Ready:** Requires zero external transit API keys or payment gateway secrets. Uses a realistic, pre-seeded SQLite database catalog.
+- **Dynamic Class Configuration:** Train #20608 (Vande Bharat Express) strictly supports only **CC (AC Chair Car — ₹890)** and **EC (Executive Chair Car — ₹1650)** with no hardcoded fallback.
+- **End-to-End Booking Flow:** Search ➔ Vehicle & Class Selection ➔ Interactive Seat Picker ➔ Passenger Details ➔ Meal Ordering ➔ Simulated Demo Checkout ➔ Confirmed Digital E-Ticket.
+- **Zero-Dependency Vector PDF Generation:** Generates valid, downloadable PDF 1.4 electronic tickets natively without external C-libraries (WeasyPrint/Cairo).
+- **Session & Password Security:** Unified password verification supporting both modern `pbkdf2`/`scrypt` hashes and legacy demo credentials with seamless auto-upgrading.
+- **Duplicate Seat Prevention:** Real-time concurrency protection preventing double-booking of any seat on the same train/bus and journey date.
+- **SmartTravel AI Assistant:** Built-in offline travel assistant answering questions about train coach classes, quotas, meal add-ons, and cancellation policies without requiring an external Gemini key.
+- **Admin Operations Console:** Dedicated management dashboard at `/admin` for tracking confirmed reservations, revenue statistics, and fleet management.
 
 ---
 
-## 🛠️ Technology Stack
-
-| Layer | Technologies |
-|---|---|
-| **Frontend** | Semantic HTML5, CSS3, Vanilla JavaScript, Responsive Design |
-| **Backend** | Python Flask, Jinja2 Templates, SQLite3, WSGI |
-| **AI Engine** | Google Gemini AI (`gemini-3.8-flash`) via `@google/genai` SDK |
-| **PDF Generation** | Custom Python Vector PDF Engine (`pdf_generator.py`) |
-| **Server Bridge** | Node.js, Express, `http-proxy-middleware`, Vite |
-| **Testing** | Pytest, Python `urllib` automated test harness |
-
----
-
-## 🚀 Step-by-Step Installation & Local Execution
+## 🚀 Quick Start on Windows (VS Code)
 
 ### Prerequisites
-- **Python 3.10+**: [python.org](https://www.python.org/)
-- **Node.js 18+**: [nodejs.org](https://nodejs.org/)
+- Python 3.10+ installed on Windows (ensure **"Add Python to PATH"** was checked during installation).
+- Visual Studio Code.
 
-### 1. Clone or Extract Project
+### Step 1: Open in VS Code
+Open the extracted `SmartTravel` project directory in VS Code:
 ```bash
-cd smarttravel
+code .
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-*(Optional: Add your Google Gemini API key to `GEMINI_API_KEY` for AI features)*
+### Step 2: Open Terminal
+Press `Ctrl + ~` (or select **Terminal ➔ New Terminal** from the top menu).
 
-### 3. Install Node.js Dependencies
-```bash
-npm install
+### Step 3: (Recommended) Create Virtual Environment
+```powershell
+python -m venv venv
+venv\Scripts\activate
 ```
 
-### 4. Initialize Database
+### Step 4: Install Dependencies
 ```bash
-python3 TrainBusBooking/database.py
+pip install -r TrainBusBooking/requirements.txt
 ```
-*(On Windows: `python TrainBusBooking\database.py`)*
 
-### 5. Start Development Server
+### Step 5: Launch SmartTravel
+Run either command directly from the workspace root:
 ```bash
-npm run dev
+python app.py
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser!
+*(Or `python run.py`, or `cd TrainBusBooking && python app.py`)*
+
+### Step 6: Open the Application
+Open your web browser and navigate to:
+```
+http://127.0.0.1:5000
+```
 
 ---
 
-## 🔑 Demo Login Credentials
+## 🔑 Demo Accounts
 
-- **Admin Operations Console**:
-  - URL: [http://localhost:3000/admin](http://localhost:3000/admin)
-  - Email: `admin@smarttravel.com`
-  - Password: `admin123`
-- **Passenger Account**:
-  - Email: `aditi@example.com`
-  - Password: `user123`
-  *(Or click "Register" on the top navigation bar to create your own account)*
+| Role | Email | Password | Access Area |
+|---|---|---|---|
+| **Passenger User** | `aditi123@gmail.com` | `123456` | Public booking, seat picker, My Bookings, ticket cancellation |
+| **Passenger User** | `diya1234@gmail.com` | `123456` | Public booking, My Bookings |
+| **Administrator** | `admin@smarttravel.com` | `admin123` | `/admin` operations console, fleet management, revenue stats |
 
----
-
-## 📁 Project Directory Structure
-
-```
-smarttravel/
-├── TrainBusBooking/               # Python Flask Web Application
-│   ├── app.py                     # Main Flask routes & controllers
-│   ├── database.py                # Database schema, migrations & seed data
-│   ├── pdf_generator.py           # Native vector PDF ticket generator
-│   ├── smarttravel.db             # SQLite relational database
-│   ├── templates/                 # Jinja2 HTML5 UI templates
-│   │   ├── home.html              # Search portal & popular routes
-│   │   ├── search_results.html    # Train & bus cards with class selection
-│   │   ├── booking.html           # Boarding point & class overview
-│   │   ├── seat_selection.html    # Interactive railway coach & bus deck layouts
-│   │   ├── passenger_details.html # Passenger form with berth preferences
-│   │   ├── food.html              # Meals & catering selection
-│   │   ├── payment.html           # Demo checkout (UPI, Card, NetBanking)
-│   │   ├── ticket.html            # E-ticket with QR and PDF download
-│   │   ├── bookings.html          # My Bookings & cancellation portal
-│   │   ├── admin.html             # Operations administration console
-│   │   └── admin_login.html       # Operations authentication
-│   └── static/                    # Static assets & scripts
-│       ├── style.css              # Master responsive stylesheet
-│       └── js/                    # Client-side scripts (AI, seat, ticket)
-├── server.ts                      # Full-stack Node/Express bridge & Gemini AI API
-├── package.json                   # Node dependencies & build scripts
-├── requirements.txt               # Python package dependencies
-├── .env.example                   # Sample environment configuration
-├── start.bat                      # Windows one-click start script
-├── start.sh                       # Linux / macOS start script
-└── README.md                      # Complete system documentation
-```
+*Guest checkout is also fully supported: guest bookings are automatically linked to registered user accounts using the passenger's email address.*
 
 ---
 
 ## 🧪 Running Automated Tests
 
-Run the backend verification suite:
+Execute the comprehensive automated test suite covering all 15 critical booking and security flows:
 ```bash
-pytest
+python -m unittest discover -s tests -p "test_*.py" -v
 ```
-Or run the endpoint integration test:
-```bash
-python3 -m unittest discover tests
+
+### Test Coverage Checklist:
+1. `test_01_homepage_and_static_assets`: Verified home rendering, search widgets, CSS and JS static assets.
+2. `test_02_train_and_bus_searches`: Verified search results for trains and buses on Bengaluru ➔ Chennai.
+3. `test_03_no_results_search`: Verified clean empty search state when route has no services.
+4. `test_04_registration_and_login`: Verified registration, login session, and invalid credential rejections.
+5. `test_05_train_class_selection`: Verified Vande Bharat #20608 strictly restricts to CC and EC classes.
+6. `test_06_seat_selection_and_booked_seats`: Verified interactive seat layout and unavailable seat mapping.
+7. `test_07_passenger_details_and_food`: Verified passenger forms and server-side food pricing catalog.
+8. `test_08_payment_page_calculations`: Verified server-calculated ticket fare, food total, and grand total.
+9. `test_09_complete_demo_booking`: Verified end-to-end booking execution, database write, and E-ticket redirect.
+10. `test_10_duplicate_seat_prevention`: Verified that booking an already reserved seat on the same date fails with HTTP 400.
+11. `test_11_e_ticket_and_pdf`: Verified ticket view and binary vector PDF download stream (`application/pdf`).
+12. `test_12_my_bookings_dashboard`: Verified user booking history listing under `/bookings`.
+13. `test_13_cancellation`: Verified cancellation modal, status update to `CANCELLED`, and payment to `REFUNDED`.
+14. `test_14_admin_dashboard`: Verified admin access control, unauthorized redirects, and dashboard metrics.
+15. `test_15_invalid_input_handling`: Verified 404 on missing bookings and offline AI assistant fallback.
+
+---
+
+## 📂 Project Architecture
+
+```
+SmartTravel/
+├── app.py                      # Root launcher for single-command start in VS Code
+├── run.py                      # Alternative direct launcher
+├── README.md                   # This documentation guide
+├── tests/
+│   ├── test_smarttravel_suite.py # 15-point automated test suite
+│   ├── test_vande_bharat_and_fixes.py
+│   └── server.test.ts
+└── TrainBusBooking/
+    ├── app.py                  # Core Flask backend with all booking and AI routes
+    ├── database.py             # SQLite schema creation and demo fleet seeder
+    ├── demo_service.py         # Dynamic fare engine and route validation
+    ├── pdf_generator.py        # Standalone vector PDF ticket generation engine
+    ├── requirements.txt        # Python dependency manifest
+    ├── smarttravel.db          # SQLite persistent database
+    ├── static/
+    │   ├── style.css           # Responsive UI stylesheet
+    │   └── js/
+    │       ├── main.js         # Navigation, mobile menu & shared utilities
+    │       ├── search.js       # Auto-complete & search form validation
+    │       ├── filters.js      # Transit class & departure time filters
+    │       ├── seat-selection.js # Interactive seat/berth layout picker
+    │       ├── bookings.js     # Dashboard filter tabs & cancellation modal
+    │       └── ai-assistant.js # AI travel assistant floating widget
+    └── templates/
+        ├── home.html           # Main portal with Train / Bus search tabs
+        ├── search_results.html # Service listing with live/demo indicators
+        ├── booking.html        # Dynamic train/bus class selection overview
+        ├── seat_selection.html # Interactive seat picker for coaches & decks
+        ├── passenger_details.html # Passenger details & quota capture
+        ├── food.html           # E-catering pre-ordering menu
+        ├── payment.html        # Simulated checkout (UPI / Card / Net Banking)
+        ├── ticket.html         # Digital boarding slip with QR & PDF download
+        ├── bookings.html       # Passenger booking history & cancellation
+        ├── login.html          # User authentication portal
+        ├── register.html       # User account creation
+        ├── forgot_password.html # Password recovery request
+        ├── reset_password.html  # Secure password reset
+        ├── admin_login.html    # Operator security login
+        └── admin.html          # Operations control panel & fleet manager
 ```
 
 ---
 
-## 📄 License & Credits
-Developed for academic mini-project demonstration. Powered by **Google Gemini** for intelligent travel reasoning.
+## 🔒 Security & Academic Integrity Note
+
+This is an academic college mini-project demonstration system:
+- Payment methods (UPI, Card, Net Banking) are fully simulated—no actual money or banking credentials are ever processed.
+- Tickets generated are simulated demonstration reservation slips and are not valid for official travel on Indian Railways or state bus transport corporations.

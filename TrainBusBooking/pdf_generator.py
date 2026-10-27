@@ -43,10 +43,16 @@ def generate_ticket_pdf(booking_data):
 
     # Determine coach & berth display
     if is_train:
-        if "1A" in vehicle_class:
+        if "EC" in vehicle_class:
+            coach_berth = f"Coach E1  |  Seat {seat}"
+        elif "CC" in vehicle_class:
+            coach_berth = f"Coach C1  |  Seat {seat}"
+        elif "1A" in vehicle_class:
             coach_berth = f"Coach H1  |  Berth {seat}"
         elif "2A" in vehicle_class:
             coach_berth = f"Coach A2  |  Berth {seat}"
+        elif "3E" in vehicle_class:
+            coach_berth = f"Coach M1  |  Berth {seat}"
         elif "SL" in vehicle_class:
             coach_berth = f"Coach S4  |  Berth {seat}"
         else:
@@ -209,7 +215,7 @@ def generate_ticket_pdf(booking_data):
         "2. PHOTO IDENTITY: During real journeys, passengers must carry Government photo ID (Aadhaar / Voter ID / Passport).",
         "3. REPORTING TIME: Recommended reporting at designated boarding points is 20 minutes prior to scheduled departure.",
         "4. CANCELLATION: Bookings can be cancelled via the SmartTravel portal prior to departure with demo refund credit.",
-        "5. SYSTEM MODE: Hybrid Architecture connecting live RailKit / redBus API feeds with simulated demo booking."
+        "5. SYSTEM ARCHITECTURE: 100% Local SQLite database catalog with verified realistic demo schedules."
     ]
 
     ry = 218

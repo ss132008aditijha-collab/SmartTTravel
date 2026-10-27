@@ -131,7 +131,7 @@
                     <span>{% if transport == 'train' %}Coach &amp; Berth{% else %}Seat / Berth Number{% endif %}</span>
                     <strong style="color: var(--primary); font-size: 18px;">
                         {% if transport == 'train' %}
-                            {% if '1A' in vehicle_class %}Coach H1 · Berth {{ seat }}{% elif '2A' in vehicle_class %}Coach A2 · Berth {{ seat }}{% elif 'SL' in vehicle_class %}Coach S4 · Berth {{ seat }}{% else %}Coach B4 · Berth {{ seat }}{% endif %}
+                            {% if '1A' in vehicle_class %}Coach H1 · Berth {{ seat }}{% elif '2A' in vehicle_class %}Coach A2 · Berth {{ seat }}{% elif 'EC' in vehicle_class %}Coach E1 · Seat {{ seat }}{% elif 'CC' in vehicle_class %}Coach C1 · Seat {{ seat }}{% elif 'SL' in vehicle_class %}Coach S4 · Berth {{ seat }}{% else %}Coach B4 · Berth {{ seat }}{% endif %}
                         {% else %}
                             Seat {{ seat }}
                         {% endif %}

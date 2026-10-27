@@ -62,11 +62,17 @@ function initCancelBookingModal() {
         targetBookingId = bookingId;
         const idDisplay = document.getElementById("modalBookingIdTarget");
         if (idDisplay) idDisplay.textContent = bookingId;
-        if (modal) modal.classList.add("modal-open");
+        if (modal) {
+            modal.classList.add("show");
+            modal.classList.add("modal-open");
+        }
     };
 
     function closeModal() {
-        if (modal) modal.classList.remove("modal-open");
+        if (modal) {
+            modal.classList.remove("show");
+            modal.classList.remove("modal-open");
+        }
         targetBookingId = null;
     }
 
@@ -75,7 +81,11 @@ function initCancelBookingModal() {
     if (confirmCancelBtn) {
         confirmCancelBtn.addEventListener("click", () => {
             if (targetBookingId) {
-                window.location.href = `/cancel-booking/${targetBookingId}`;
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = `/cancel-booking/${encodeURIComponent(targetBookingId)}`;
+                document.body.appendChild(form);
+                form.submit();
             }
         });
     }

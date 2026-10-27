@@ -112,11 +112,33 @@ function updateFoodTotal() {
 }
 
 // Proceed to payment with chosen food total
+// Proceed to payment with item quantities for server-side validation
 window.proceedWithFood = function(skip = false) {
     const params = new URLSearchParams(window.location.search);
-    const hiddenTotalInput = document.getElementById("hiddenFoodTotal");
-    const totalFood = skip ? "0" : (hiddenTotalInput ? hiddenTotalInput.value : "0");
 
-    params.set("food_total", totalFood);
+    const selectedFood = {};
+
+    if (!skip) {
+        for (const [key, item] of Object.entries(cart)) {
+            if (item.qty > 0) {
+                selectedFood[key] = item.qty;
+            }
+        }
+    }
+
+    // Quantities are sent for validation.
+    // The backend must calculate prices independently.
+    params.set("food_items", JSON.stringify(selectedFood));
+
+    // Keep this for displaying the estimated amount in the UI.
+    const estimatedFoodTotal = skip
+        ? 0
+        : Object.values(cart).reduce(
+            (sum, item) => sum + item.price * item.qty,
+            0
+        );
+
+    params.set("food_total", String(estimatedFoodTotal));
+
     window.location.href = `/payment?${params.toString()}`;
 };

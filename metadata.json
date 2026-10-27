@@ -1,6 +1,6 @@
 {
-  "name": "SmartTravel - Train & Bus Ticket Booking System",
-  "description": "SmartTravel is a premium online travel booking system for trains and buses with interactive seat layout, boarding selection, food ordering, and digital e-tickets.",
+  "name": "SmartTravel — Train & Bus Ticket Booking System",
+  "description": "SmartTravel is a full-stack train and bus ticket booking platform with real-time route search, dynamic coach classes, interactive seat selection, catering add-ons, e-ticket generation with vector PDF downloads, and Gemini AI assistant.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

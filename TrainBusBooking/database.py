@@ -235,13 +235,25 @@ def create_database():
     # =========================
     # SEED INITIAL DATA IF EMPTY
     # =========================
-    # Admin User
-    cursor.execute("SELECT COUNT(*) FROM users WHERE email = 'admin@smarttravel.com'")
+    try:
+        from werkzeug.security import generate_password_hash
+    except ImportError:
+        import hashlib
+        def generate_password_hash(p):
+            return f"sha256:{hashlib.sha256(p.encode()).hexdigest()}"
+
+    # Seed Demo Users if table is empty
+    cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("""
+        sample_users = [
+            ("Aditi", "aditi123@gmail.com", "9876543210", generate_password_hash("123456"), "user"),
+            ("SmartTravel Admin", "admin@smarttravel.com", "9998887776", generate_password_hash("admin123"), "admin"),
+            ("diya", "diya1234@gmail.com", "9876543211", generate_password_hash("123456"), "user"),
+        ]
+        cursor.executemany("""
             INSERT INTO users (name, email, phone, password, role)
-            VALUES ('SmartTravel Admin', 'admin@smarttravel.com', '9999988888', 'admin123', 'admin')
-        """)
+            VALUES (?, ?, ?, ?, ?)
+        """, sample_users)
 
     # Seed Food Items
     cursor.execute("SELECT COUNT(*) FROM food_items")

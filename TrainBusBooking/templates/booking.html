@@ -125,49 +125,18 @@
                 </p>
 
                 <div class="train-classes-grid" style="margin-bottom: 20px;">
-                    <label class="train-class-box class-ac {% if '1A' in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('1A (AC First Class)', '2450', '1')">
-                        <input type="radio" name="trainClassRadio" value="1A" {% if '1A' in vehicle_class %}checked{% endif %} style="display: none;">
+                    {% for c in available_classes %}
+                    <label class="train-class-box {% if c.is_ac %}class-ac{% else %}class-nonac{% endif %} {% if c.code == vehicle_class or c.code in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('{{ c.code }}', '{{ c.name }}', '{{ c.price }}', '{{ 1 if c.is_ac else 0 }}', event)">
+                        <input type="radio" name="trainClassRadio" value="{{ c.code }}" {% if c.code == vehicle_class or c.code in vehicle_class %}checked{% endif %} style="display: none;">
                         <div class="class-box-header">
-                            <strong>1A</strong>
-                            <span class="class-ac-badge badge-ac">AC</span>
+                            <strong>{{ c.code }}</strong>
+                            <span class="class-ac-badge {% if c.is_ac %}badge-ac{% else %}badge-nonac{% endif %}">{{ 'AC' if c.is_ac else 'NON-AC' }}</span>
                         </div>
-                        <div class="class-box-name">AC First Class</div>
-                        <div class="class-box-price">₹2,450</div>
-                        <div class="class-box-status" style="font-size: 11px;">Lockable coupe &amp; luxury linen</div>
+                        <div class="class-box-name">{{ c.name }}</div>
+                        <div class="class-box-price">₹{{ c.price }}</div>
+                        <div class="class-box-status" style="font-size: 11px;">{{ c.desc }}</div>
                     </label>
-
-                    <label class="train-class-box class-ac {% if '2A' in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('2A (AC 2 Tier)', '1580', '1')">
-                        <input type="radio" name="trainClassRadio" value="2A" {% if '2A' in vehicle_class %}checked{% endif %} style="display: none;">
-                        <div class="class-box-header">
-                            <strong>2A</strong>
-                            <span class="class-ac-badge badge-ac">AC</span>
-                        </div>
-                        <div class="class-box-name">AC 2 Tier</div>
-                        <div class="class-box-price">₹1,580</div>
-                        <div class="class-box-status" style="font-size: 11px;">2-tier berths with privacy curtains</div>
-                    </label>
-
-                    <label class="train-class-box class-ac {% if '3A' in vehicle_class or vehicle_class == 'STANDARD' %}active-class-pill{% endif %}" onclick="selectTrainClass('3A (AC 3 Tier)', '1120', '1')">
-                        <input type="radio" name="trainClassRadio" value="3A" {% if '3A' in vehicle_class or vehicle_class == 'STANDARD' %}checked{% endif %} style="display: none;">
-                        <div class="class-box-header">
-                            <strong>3A</strong>
-                            <span class="class-ac-badge badge-ac">AC</span>
-                        </div>
-                        <div class="class-box-name">AC 3 Tier</div>
-                        <div class="class-box-price">₹1,120</div>
-                        <div class="class-box-status" style="font-size: 11px;">3-tier berths, AC &amp; bedrolls</div>
-                    </label>
-
-                    <label class="train-class-box class-nonac {% if 'SL' in vehicle_class %}active-class-pill{% endif %}" onclick="selectTrainClass('SL (Sleeper Class)', '460', '0')">
-                        <input type="radio" name="trainClassRadio" value="SL" {% if 'SL' in vehicle_class %}checked{% endif %} style="display: none;">
-                        <div class="class-box-header">
-                            <strong>SL</strong>
-                            <span class="class-ac-badge badge-nonac">NON-AC</span>
-                        </div>
-                        <div class="class-box-name">Sleeper Class</div>
-                        <div class="class-box-price">₹460</div>
-                        <div class="class-box-status" style="font-size: 11px;">Open window budget sleeper</div>
-                    </label>
+                    {% endfor %}
                 </div>
             </div>
         {% else %}
@@ -310,16 +279,19 @@ let currentClass = "{{ vehicle_class }}";
 let currentPrice = "{{ price }}";
 let currentIsAc = "{{ is_ac }}";
 
-function selectTrainClass(className, classPrice, isAc) {
-    currentClass = className;
+function selectTrainClass(code, name, classPrice, isAc, evt) {
+    currentClass = code;
     currentPrice = classPrice;
     currentIsAc = isAc;
 
-    document.getElementById("displayClassPrice").textContent = classPrice;
-    document.getElementById("selectedClassLabel").textContent = className;
+    const priceDisplay = document.getElementById("displayClassPrice");
+    if (priceDisplay) priceDisplay.textContent = classPrice;
+    const labelDisplay = document.getElementById("selectedClassLabel");
+    if (labelDisplay) labelDisplay.textContent = `${code} (${name})`;
 
     document.querySelectorAll(".train-class-box").forEach(box => box.classList.remove("active-class-pill"));
-    event.currentTarget.classList.add("active-class-pill");
+    const target = evt ? evt.currentTarget : (window.event ? window.event.currentTarget : null);
+    if (target) target.classList.add("active-class-pill");
 }
 
 function continueToSeatSelection() {

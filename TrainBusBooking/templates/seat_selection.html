@@ -58,7 +58,7 @@
             <div>
                 <span class="vehicle-type-badge" style="background: {% if transport == 'train' %}#1e3a8a{% else %}#0284c7{% endif %}; color: white;">
                     {% if transport == 'train' %}
-                        🚆 Indian Railways Coach: <strong>{% if '1A' in vehicle_class %}H1 (1A){% elif '2A' in vehicle_class %}A2 (2A){% elif 'SL' in vehicle_class %}S4 (SL){% else %}B4 (3A){% endif %}</strong>
+                        🚆 Indian Railways Coach: <strong>{% if '1A' in vehicle_class %}H1 (1A){% elif '2A' in vehicle_class %}A2 (2A){% elif 'EC' in vehicle_class %}E1 (EC){% elif 'CC' in vehicle_class %}C1 (CC){% elif 'SL' in vehicle_class %}S4 (SL){% else %}B4 (3A){% endif %}</strong>
                     {% else %}
                         🚌 Bus Layout: <strong>{{ vehicle_class }}</strong>
                     {% endif %}
@@ -87,7 +87,7 @@
                 <div>
                     <h2 style="font-size: 20px; font-weight: 800;">
                         {% if transport == 'train' %}
-                            Coach Berth Map · {% if '1A' in vehicle_class %}AC First Class (H1){% elif '2A' in vehicle_class %}AC 2-Tier (A2){% elif 'SL' in vehicle_class %}Sleeper Class (S4){% else %}AC 3-Tier (B4){% endif %}
+                            Coach Berth Map · {% if '1A' in vehicle_class %}AC First Class (H1){% elif '2A' in vehicle_class %}AC 2-Tier (A2){% elif 'EC' in vehicle_class %}Exec Chair Car (E1){% elif 'CC' in vehicle_class %}AC Chair Car (C1){% elif 'SL' in vehicle_class %}Sleeper Class (S4){% else %}AC 3-Tier (B4){% endif %}
                         {% else %}
                             Bus Cabin Map · {{ vehicle_class }}
                         {% endif %}
