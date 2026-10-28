@@ -3,7 +3,10 @@ import sqlite3
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(BASE_DIR, "smarttravel.db")
+DATABASE = os.environ.get(
+    "DATABASE_PATH",
+    os.path.join(BASE_DIR, "smarttravel.db")
+)
 
 
 def get_db_connection():

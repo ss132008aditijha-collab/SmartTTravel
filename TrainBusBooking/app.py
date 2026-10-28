@@ -26,7 +26,10 @@ for candidate in [
     if os.path.exists(candidate) and candidate not in sys.path:
         sys.path.insert(0, candidate)
 
-DATABASE = os.path.join(BASE_DIR, "smarttravel.db")
+DATABASE = os.environ.get(
+    "DATABASE_PATH",
+    os.path.join(BASE_DIR, "smarttravel.db")
+)
 
 app = Flask(
     __name__,

@@ -37,7 +37,7 @@ function getPythonExecutable(): string {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   const FLASK_PORT = 5001;
 
   const appletDir = process.cwd();
@@ -270,11 +270,17 @@ Return a structured JSON recommendation with:
   // ==========================================================
   // VITE & FLASK PROXY
   // ==========================================================
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "custom",
-  });
-  app.use(vite.middlewares);
+  
+  // Enable Vite only during local development.
+  // In production, Flask serves the main website.
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "custom",
+    });
+    app.use(vite.middlewares);
+  }
+
 
   const flaskProxy = createProxyMiddleware({
     target: `http://127.0.0.1:${FLASK_PORT}`,
